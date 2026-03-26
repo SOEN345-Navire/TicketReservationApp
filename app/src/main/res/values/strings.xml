@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">TicketReservationApp</string>
+    <string name="email_hint">Enter your email</string>
+    <string name="password_hint">Enter your password</string>
+    <string name="login_button">Log In</string>
+    <string name="register_link">Not registered? Click here.</string>
+    <string name="phone_hint">Enter your phone #</string>
+    <string name="confirmPassword_hint">Confirm your password</string>
+    <string name="register_button">Register</string>
+</resources>
