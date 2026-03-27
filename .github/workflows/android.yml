@@ -42,4 +42,4 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: unit-test-results
-        path: app/build/test-results/testDebugUnitTest
+        path: app/build/test-results/testDebugUnitTest/
