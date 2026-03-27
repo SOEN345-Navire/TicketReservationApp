@@ -35,8 +35,11 @@ jobs:
         restore-keys: |
           gradle-
 
-    - name: Build with Gradle
+    - name: Build & Run Unit Tests
       run: ./gradlew build
 
-    - name: Run unit tests
-      run: ./gradlew test
+    - name: Upload Unit Test Results
+      uses: actions/upload-artifact@v3
+      with:
+        name: unit-test-results
+        path: app/build/test-results/testDebugUnitTest
