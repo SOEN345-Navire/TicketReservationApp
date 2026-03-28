@@ -27,12 +27,17 @@ android {
                 "proguard-rules.pro"
             )
         }
+        getByName("debug") {
+            isTestCoverageEnabled = true
+        }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
 }
+
+plugins.apply("jacoco")
 
 dependencies {
     implementation(libs.appcompat)
