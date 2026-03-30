@@ -14,6 +14,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.firebase.ui.firestore.FirestoreRecyclerOptions;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.Timestamp;
@@ -58,10 +59,34 @@ public class AdminActivity extends AppCompatActivity {
     }
 
     private void addEvent() {
+        showEventDialog(null);
+    }
+
+    public void deleteEvent(Event event) {
+        new MaterialAlertDialogBuilder(this)
+                .setTitle("Cancel Event")
+                .setMessage("Are you sure you want to delete this event?")
+                .setPositiveButton("Yes, Delete", (dialog, which) -> {
+                    eventsRef.document(event.getId()).delete()
+                            .addOnSuccessListener(aVoid ->
+                                    Toast.makeText(this, "Event Removed!", Toast.LENGTH_SHORT).show());
+                })
+                .setNegativeButton("No", null)
+                .show();
+    }
+
+    public void editEvent(Event event) {
+        showEventDialog(event);
+    }
+
+    // method to handle both adding and creating events
+    // if event is null, form is blank (Add mode). If not null, form is pre-filled (Edit mode).
+    private void showEventDialog(Event event) {
         BottomSheetDialog dialog = new BottomSheetDialog(this);
         View view = getLayoutInflater().inflate(R.layout.add_event, null);
         dialog.setContentView(view);
 
+        TextView tvTitle = view.findViewById(R.id.tvDialogTitle);
         TextInputEditText etName = view.findViewById(R.id.etName);
         TextInputEditText etLocation = view.findViewById(R.id.etLocation);
         TextInputEditText etCategory = view.findViewById(R.id.etCategory);
@@ -70,6 +95,20 @@ public class AdminActivity extends AppCompatActivity {
         MaterialButton btnSave = view.findViewById(R.id.btnSaveEvent);
 
         final Calendar calendar = Calendar.getInstance();
+        boolean isEdit = (event != null);
+
+        if (isEdit) { // Pre-fill fields if we're editing
+            tvTitle.setText("Edit Event");
+            btnSave.setText("Update Event");
+            etName.setText(event.getName());
+            etLocation.setText(event.getLocation());
+            etCategory.setText(event.getCategory());
+            etMax.setText(String.valueOf(event.getMaxPlaces()));
+            if (event.getDate() != null) {
+                calendar.setTime(event.getDate().toDate());
+                updateDateButtonText(btnPickDate, calendar);
+            }
+        }
 
         btnPickDate.setOnClickListener(v -> showDateTimePicker(calendar, btnPickDate));
 
@@ -86,72 +125,24 @@ public class AdminActivity extends AppCompatActivity {
 
             int maxPlaces = Integer.parseInt(maxStr);
             Timestamp date = new Timestamp(calendar.getTime());
-            // Create a new Event object
-            Event newEvent = new Event(name, date, location, category, 0, maxPlaces);
-            // Push to Firestore
-            eventsRef.add(newEvent).addOnSuccessListener(documentReference -> {
-                Toast.makeText(this, "Event Added!", Toast.LENGTH_SHORT).show();
-                dialog.dismiss();
-            });
-        });
 
-        dialog.show();
-    }
-
-    public void editEvent(Event event) {
-        BottomSheetDialog dialog = new BottomSheetDialog(this);
-        View view = getLayoutInflater().inflate(R.layout.add_event, null);
-        dialog.setContentView(view);
-
-        TextView tvTitle = view.findViewById(R.id.tvDialogTitle);
-        tvTitle.setText("Edit Event");
-
-        TextInputEditText etName = view.findViewById(R.id.etName);
-        TextInputEditText etLocation = view.findViewById(R.id.etLocation);
-        TextInputEditText etCategory = view.findViewById(R.id.etCategory);
-        TextInputEditText etMax = view.findViewById(R.id.etMaxPlaces);
-        MaterialButton btnPickDate = view.findViewById(R.id.btnPickDate);
-        MaterialButton btnSave = view.findViewById(R.id.btnSaveEvent);
-        btnSave.setText("Update Event");
-
-        // Pre-fill existing data
-        etName.setText(event.getName());
-        etLocation.setText(event.getLocation());
-        etCategory.setText(event.getCategory());
-        etMax.setText(String.valueOf(event.getMaxPlaces()));
-
-        final Calendar calendar = Calendar.getInstance();
-        if (event.getDate() != null) {
-            calendar.setTime(event.getDate().toDate());
-            updateDateButtonText(btnPickDate, calendar);
-        }
-
-        btnPickDate.setOnClickListener(v -> showDateTimePicker(calendar, btnPickDate));
-
-        btnSave.setOnClickListener(v -> {
-            String name = etName.getText().toString().trim();
-            String maxStr = etMax.getText().toString().trim();
-            String category = etCategory.getText().toString().trim();
-            String location = etLocation.getText().toString().trim();
-
-            if (name.isEmpty() || maxStr.isEmpty() || category.isEmpty() || location.isEmpty()) {
-                Toast.makeText(this, "Please fill in all fields", Toast.LENGTH_SHORT).show();
-                return;
+            if (isEdit) { // Update existing document
+                event.setName(name);
+                event.setLocation(location);
+                event.setCategory(category);
+                event.setMaxPlaces(maxPlaces);
+                event.setDate(date);
+                eventsRef.document(event.getId()).set(event).addOnSuccessListener(aVoid -> {
+                    Toast.makeText(this, "Event Updated!", Toast.LENGTH_SHORT).show();
+                    dialog.dismiss();
+                });
+            } else { // Create brand new document
+                Event newEvent = new Event(name, date, location, category, 0, maxPlaces);
+                eventsRef.add(newEvent).addOnSuccessListener(ref -> {
+                    Toast.makeText(this, "Event Added!", Toast.LENGTH_SHORT).show();
+                    dialog.dismiss();
+                });
             }
-
-            // Update the existing object fields
-            event.setName(name);
-            event.setLocation(etLocation.getText().toString().trim());
-            event.setCategory(etCategory.getText().toString().trim());
-            event.setMaxPlaces(Integer.parseInt(maxStr));
-            event.setDate(new Timestamp(calendar.getTime()));
-
-            // Update in Firestore using the document ID
-            eventsRef.document(event.getId()).set(event)
-                    .addOnSuccessListener(aVoid -> {
-                        Toast.makeText(this, "Event Updated!", Toast.LENGTH_SHORT).show();
-                        dialog.dismiss();
-                    });
         });
 
         dialog.show();

@@ -1,16 +1,19 @@
 package com.example.ticketreservationapp;
 
+import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import com.firebase.ui.firestore.FirestoreRecyclerOptions;
 import com.firebase.ui.firestore.FirestoreRecyclerAdapter;
-import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.button.MaterialButton;
+
+import java.text.SimpleDateFormat;
+import java.util.Locale;
 
 public class EventAdapter extends FirestoreRecyclerAdapter<Event, EventAdapter.EventHolder> {
 
@@ -22,66 +25,7 @@ public class EventAdapter extends FirestoreRecyclerAdapter<Event, EventAdapter.E
     protected void onBindViewHolder(@NonNull EventHolder holder, int position, @NonNull Event model) {
         String docId = getSnapshots().getSnapshot(position).getId();
         model.setId(docId);
-        holder.tvName.setText(model.getName());
-        holder.tvCategory.setText(model.getCategory());
-        holder.tvLocation.setText(model.getLocation());
-        holder.tvReservedPlaces.setText("Reserved: " + model.getReservedPlaces());
-        holder.tvMaxPlaces.setText("Limit: " + model.getMaxPlaces());
-
-        if (model.getDate() != null) {
-            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("MMM dd, yyyy • hh:mm a", java.util.Locale.getDefault());
-            String dateString = sdf.format(model.getDate().toDate());
-            holder.tvDateTime.setText(dateString);
-        }
-
-        String category = model.getCategory().toLowerCase().trim();
-        int color;
-        int textColor = android.graphics.Color.WHITE;
-
-        switch (category) {
-            case "concert":
-                color = android.graphics.Color.parseColor("#f29bc2");
-                break;
-            case "movies":
-                color = android.graphics.Color.parseColor("#a176d6");
-                break;
-            case "travel":
-                color = android.graphics.Color.parseColor("#6bb0ed");
-                break;
-            case "sports":
-                color = android.graphics.Color.parseColor("#7cbd6f");
-                break;
-            default:
-                color = android.graphics.Color.parseColor("#9C27B0");
-                break;
-        }
-
-        holder.tvCategory.getBackground().setTint(color);
-        holder.tvCategory.setTextColor(textColor);
-        holder.tvCategory.setText(model.getCategory());
-
-        holder.btnEdit.setOnClickListener(v -> {
-            if (v.getContext() instanceof AdminActivity) {
-                ((AdminActivity) v.getContext()).editEvent(model);
-            }
-        });
-
-        holder.btnCancel.setOnClickListener(v -> {
-            new MaterialAlertDialogBuilder(v.getContext())
-                    .setTitle("Cancel Event")
-                    .setMessage("Are you sure you want to delete this event?")
-                    .setPositiveButton("Yes, Delete", (dialog, which) -> {
-
-                        String id = model.getId();
-                        com.google.firebase.firestore.FirebaseFirestore.getInstance()
-                                .collection("events")
-                                .document(id)
-                                .delete()
-                                .addOnSuccessListener(aVoid -> Toast.makeText(v.getContext(), "Event Removed!", Toast.LENGTH_SHORT).show());
-                    })
-                    .setNegativeButton("No", null)
-                    .show();
-        });
+        holder.bind(model);
     }
 
     @NonNull
@@ -93,9 +37,9 @@ public class EventAdapter extends FirestoreRecyclerAdapter<Event, EventAdapter.E
     }
 
     class EventHolder extends RecyclerView.ViewHolder {
-        TextView tvName, tvCategory, tvLocation, tvDateTime, tvReservedPlaces, tvMaxPlaces;
-        com.google.android.material.button.MaterialButton btnEdit, btnCancel;
-
+        private final TextView tvName, tvCategory, tvLocation, tvDateTime, tvReservedPlaces, tvMaxPlaces;
+        private final MaterialButton btnEdit, btnCancel;
+        private final SimpleDateFormat dateFormat = new SimpleDateFormat("MMM dd, yyyy • hh:mm a", Locale.getDefault());
         public EventHolder(View itemView) {
             super(itemView);
             tvName = itemView.findViewById(R.id.tvEventName);
@@ -106,6 +50,57 @@ public class EventAdapter extends FirestoreRecyclerAdapter<Event, EventAdapter.E
             tvMaxPlaces = itemView.findViewById(R.id.tvMaxPlaces);
             btnEdit = itemView.findViewById(R.id.btnEdit);
             btnCancel = itemView.findViewById(R.id.btnCancel);
+        }
+
+        public void bind(Event model) {
+            tvName.setText(model.getName());
+            tvLocation.setText(model.getLocation());
+            tvReservedPlaces.setText("Reserved: " + model.getReservedPlaces());
+            tvMaxPlaces.setText("Limit: " + model.getMaxPlaces());
+            updateCategoryUI(model.getCategory());
+
+            if (model.getDate() != null) {
+                tvDateTime.setText(dateFormat.format(model.getDate().toDate()));
+            }
+
+            btnEdit.setOnClickListener(v -> {
+                if (v.getContext() instanceof AdminActivity) {
+                    ((AdminActivity) v.getContext()).editEvent(model);
+                }
+            });
+
+            btnCancel.setOnClickListener(v -> {
+                if (v.getContext() instanceof AdminActivity) {
+                    ((AdminActivity) v.getContext()).deleteEvent(model);
+                }
+            });
+        }
+
+        public void updateCategoryUI(String categoryName) {
+            String category = categoryName.toLowerCase().trim();
+            int color;
+
+            switch (category) {
+                case "concert":
+                    color = Color.parseColor("#f29bc2");
+                    break;
+                case "movies":
+                    color = Color.parseColor("#a176d6");
+                    break;
+                case "travel":
+                    color = Color.parseColor("#6bb0ed");
+                    break;
+                case "sports":
+                    color = Color.parseColor("#7cbd6f");
+                    break;
+                default:
+                    color = Color.parseColor("#9C27B0");
+                    break;
+            }
+
+            tvCategory.getBackground().setTint(color);
+            tvCategory.setTextColor(Color.WHITE);
+            tvCategory.setText(categoryName);
         }
     }
 }
