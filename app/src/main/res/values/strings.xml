@@ -8,4 +8,6 @@
     <string name="phone_hint">Enter your phone #</string>
     <string name="confirmPassword_hint">Confirm your password</string>
     <string name="register_button">Register</string>
+    <string name="confirm_email">Please verify your email and \nconfirm the link before continuing.</string>
+    <string name="confirm_button">Continue</string>
 </resources>

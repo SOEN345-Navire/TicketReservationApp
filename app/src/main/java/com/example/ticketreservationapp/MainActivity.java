@@ -7,6 +7,7 @@ import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -18,11 +19,20 @@ public class MainActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
-        auth = Authentification.getAuth();
+        auth = FirebaseAuth.getInstance();
+        FirebaseUser user = auth.getCurrentUser();
 
         // Check if user is already logged in
-        if (auth.getCurrentUser() == null) {
+        if (user == null) {
             startActivity(new Intent(MainActivity.this, LogInActivity.class));
+            finish();
+            return;
+        }
+
+        //Check if user is verified
+        if (!user.isEmailVerified()) {
+            startActivity(new Intent(MainActivity.this, ConfirmEmailActivity.class));
+            finish();
         }
 
     }

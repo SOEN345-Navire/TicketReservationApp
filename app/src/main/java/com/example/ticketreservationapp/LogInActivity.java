@@ -25,14 +25,19 @@ public class LogInActivity extends AppCompatActivity {
         setContentView(R.layout.activity_login);
 
         // Initialize FirebaseAuth instance
-        auth = Authentification.getAuth();
+        auth = FirebaseAuth.getInstance();
+
 
         email = findViewById(R.id.email_edittext);
         password = findViewById(R.id.password_edittext);
         phone = findViewById(R.id.phone_edittext);
 
         TextView registerLink = findViewById(R.id.register_link);
-        registerLink.setOnClickListener(v -> startActivity(new Intent(LogInActivity.this, RegisterActivity.class)));
+        registerLink.setOnClickListener(v -> {
+            startActivity(new Intent(LogInActivity.this, RegisterActivity.class));
+            finish();
+        });
+
 
 
         Button logMail = findViewById(R.id.loginMail_button);

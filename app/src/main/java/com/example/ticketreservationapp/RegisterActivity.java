@@ -5,19 +5,22 @@ import static com.example.ticketreservationapp.Authentification.passwordRegex;
 import static com.example.ticketreservationapp.R.*;
 
 import android.content.Intent;
+
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
+
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthUserCollisionException;
 
 
 public class RegisterActivity extends AppCompatActivity {
     private EditText email, confirmPassword, password;
+
     private FirebaseAuth auth;
 
 
@@ -27,7 +30,8 @@ public class RegisterActivity extends AppCompatActivity {
         setContentView(layout.activity_register);
 
         // Initialize FirebaseAuth instance
-        auth = Authentification.getAuth();
+        auth = FirebaseAuth.getInstance();
+
 
         email = findViewById(id.email_edittext);
         password = findViewById(id.password_edittext);
@@ -38,8 +42,9 @@ public class RegisterActivity extends AppCompatActivity {
     }
 
     private void registerWithEmail() {
+
         // Get values from input fields
-        String authString = email.getText().toString().trim();
+        String authString = email.getText().toString().trim().toLowerCase();
         String pass = password.getText().toString().trim();
         String confirmPass = confirmPassword.getText().toString().trim();
 
@@ -58,15 +63,24 @@ public class RegisterActivity extends AppCompatActivity {
             return;
         }
         if(authString.matches(emailRegex)) {
+
+            // Register user with email and password
              auth.createUserWithEmailAndPassword(authString, pass)
                      .addOnCompleteListener(this, task -> {
+                         // Registration successful
                          if (task.isSuccessful()) {
-                             Toast.makeText(RegisterActivity.this, "Registration successful!", Toast.LENGTH_LONG).show();
                              // Navigate to MainActivity
-                             startActivity(new Intent(RegisterActivity.this, MainActivity.class));
+                             Toast.makeText(RegisterActivity.this, "Registration successful!", Toast.LENGTH_LONG).show();
+                             startActivity(new Intent(RegisterActivity.this, ConfirmEmailActivity.class));
+                             finish();
+                         }
+                         // Registration failed
+                         //User is already registered
+                         else if (task.getException() instanceof FirebaseAuthUserCollisionException){
+                             Toast.makeText(RegisterActivity.this, "You're already register please log in", Toast.LENGTH_LONG).show();
+                             startActivity(new Intent(RegisterActivity.this, LogInActivity.class));
                              finish();
                          } else {
-                             // Registration failed
                              Toast.makeText(RegisterActivity.this, "Registration failed! Please try again later", Toast.LENGTH_LONG).show();
                          }
                      });
@@ -74,5 +88,4 @@ public class RegisterActivity extends AppCompatActivity {
             Toast.makeText(this, "Please enter a valid email", Toast.LENGTH_LONG).show();
         }
     }
-
 }
