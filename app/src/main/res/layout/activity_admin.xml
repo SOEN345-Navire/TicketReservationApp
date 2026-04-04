@@ -9,19 +9,28 @@
     tools:context=".AdminActivity">
 
     <com.google.android.material.appbar.AppBarLayout
+        android:fitsSystemWindows="true"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@android:color/white"
         app:elevation="0dp">
-
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/adminToolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             app:title="Manage Events"
             app:titleTextColor="@color/purple_700"
-            app:titleCentered="true" />
-
+            app:titleCentered="true">
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:id="@+id/logout"
+                android:text="@string/logout_button"
+                android:textColor="@android:color/white"
+                android:layout_marginEnd="10dp">
+            </Button>
+        </com.google.android.material.appbar.MaterialToolbar>
     </com.google.android.material.appbar.AppBarLayout>
 
     <androidx.recyclerview.widget.RecyclerView

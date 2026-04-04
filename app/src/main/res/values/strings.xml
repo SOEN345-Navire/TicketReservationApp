@@ -10,4 +10,6 @@
     <string name="register_button">Register</string>
     <string name="confirm_email">Please verify your email and \nconfirm the link before continuing.</string>
     <string name="confirm_button">Continue</string>
+    <string name="code_hint">Enter the code sent to your phone</string>
+    <string name="logout_button">Log Out</string>
 </resources>
