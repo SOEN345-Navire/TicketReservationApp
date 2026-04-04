@@ -11,6 +11,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.PhoneAuthProvider;
 
 
 public class LogInActivity extends AppCompatActivity {
@@ -18,6 +19,9 @@ public class LogInActivity extends AppCompatActivity {
     private EditText email, password, phone;
 
     private FirebaseAuth auth;
+
+    private PhoneAuthProvider.OnVerificationStateChangedCallbacks callbacks;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,16 +43,13 @@ public class LogInActivity extends AppCompatActivity {
         });
 
 
-
         Button logMail = findViewById(R.id.loginMail_button);
-        logMail.setOnClickListener(v -> logInWithEmail());
+        logMail.setOnClickListener(v -> logInWithEmail(email.getText().toString().trim(), password.getText().toString().trim()));
         Button logPhone = findViewById(R.id.loginPhone_button);
-        logPhone.setOnClickListener(v -> logInWithPhone());
+        logPhone.setOnClickListener(v -> logInWithPhone(phone.getText().toString().trim()));
     }
 
-    private void logInWithEmail() {
-        String mailString = email.getText().toString().trim();
-        String pass = password.getText().toString().trim();
+    void logInWithEmail(String mailString, String pass) {
 
         if (mailString.isEmpty() || pass.isEmpty()) {
             Toast.makeText(this, "Please enter credentials", Toast.LENGTH_LONG).show();
@@ -59,7 +60,7 @@ public class LogInActivity extends AppCompatActivity {
             if (task.isSuccessful()) {
                 Toast.makeText(LogInActivity.this, "Login successful!", Toast.LENGTH_LONG).show();
                 // Navigate to MainActivity
-                startActivity(new Intent(LogInActivity.this, AdminActivity.class));
+                startActivity(new Intent(LogInActivity.this, MainActivity.class));
                 finish();
             } else {
                 // Login failed
@@ -69,12 +70,20 @@ public class LogInActivity extends AppCompatActivity {
         });
     }
 
-    private void logInWithPhone() {
-        String phoneString = phone.getText().toString().trim();
+    void logInWithPhone(String phoneString) {
 
         if (phoneString.isEmpty()) {
             Toast.makeText(this, "Please enter a phone number", Toast.LENGTH_LONG).show();
+            return;
         }
+
+        if (!phoneString.matches(Authentification.phoneRegex)) {
+            Toast.makeText(this, "Please enter a valid phone number", Toast.LENGTH_LONG).show();
+            return;
+        }
+        Authentification.phone = "+1" + phoneString;
+        startActivity(new Intent(LogInActivity.this, ConfirmPhoneActivity.class));
+        finish();
     }
 
 }

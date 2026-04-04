@@ -2,11 +2,14 @@ package com.example.ticketreservationapp;
 
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -18,13 +21,17 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.Timestamp;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Locale;
+import java.util.Objects;
 
 public class AdminActivity extends AppCompatActivity {
 
@@ -32,6 +39,16 @@ public class AdminActivity extends AppCompatActivity {
     private final CollectionReference eventsRef = db.collection("events");
     private EventAdapter adapter;
     private RecyclerView recyclerView;
+
+    FirebaseAuth auth;
+
+    FirebaseAuth.AuthStateListener authStateListener = new FirebaseAuth.AuthStateListener() {
+        @Override
+        public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
+            FirebaseUser user = firebaseAuth.getCurrentUser();
+            checkUserStatus(user);
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,7 +60,41 @@ public class AdminActivity extends AppCompatActivity {
 
         initRecyclerView();
 
+        initAuth();
+
         btnAdd.setOnClickListener(v -> addEvent());
+    }
+
+    private void checkUserStatus(FirebaseUser user) {
+        if (user == null) {
+            startActivity(new Intent(AdminActivity.this, LogInActivity.class));
+            finish();
+            return;
+        }
+        //Check if user is verified
+        if (!user.isEmailVerified() && user.getEmail() != null && Objects.requireNonNull(user.getEmail()).matches(Authentification.emailRegex)) {
+            startActivity(new Intent(AdminActivity.this, ConfirmEmailActivity.class));
+            finish();
+        }
+
+        Authentification.isAdmin(user.getUid()).addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                DocumentSnapshot document = task.getResult();
+                if (document.exists()) {
+                    boolean isAdmin = Boolean.TRUE.equals(document.getBoolean("isAdmin"));
+                    if (!isAdmin) {
+                        startActivity(new Intent(AdminActivity.this, MainActivity.class));
+                        finish();
+                    }
+                }
+            }
+        });
+    }
+
+    private void initAuth() {
+        auth = FirebaseAuth.getInstance();
+        Button logout = findViewById(R.id.logout);
+        logout.setOnClickListener(v -> auth.signOut());
     }
 
     private void initRecyclerView() {
@@ -168,11 +219,13 @@ public class AdminActivity extends AppCompatActivity {
     protected void onStart() {
         super.onStart();
         if (adapter != null) adapter.startListening();
+        auth.addAuthStateListener(authStateListener);
     }
 
     @Override
     protected void onStop() {
         super.onStop();
         if (adapter != null) adapter.stopListening();
+        auth.removeAuthStateListener(authStateListener);
     }
 }

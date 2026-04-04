@@ -38,16 +38,10 @@ public class RegisterActivity extends AppCompatActivity {
         confirmPassword = findViewById(id.confirmPassword_edittext);
 
         Button registerMail = findViewById(id.registerMail_button);
-        registerMail.setOnClickListener(v -> registerWithEmail());
+        registerMail.setOnClickListener(v -> registerWithEmail(email.getText().toString().trim().toLowerCase(),password.getText().toString().trim(),confirmPassword.getText().toString().trim()));
     }
 
-    private void registerWithEmail() {
-
-        // Get values from input fields
-        String authString = email.getText().toString().trim().toLowerCase();
-        String pass = password.getText().toString().trim();
-        String confirmPass = confirmPassword.getText().toString().trim();
-
+    void registerWithEmail(String authString, String pass, String confirmPass) {
 
         // Validate input
         if (authString.isEmpty() || pass.isEmpty() || confirmPass.isEmpty()) {

@@ -10,17 +10,18 @@
         android:theme="@style/Theme.TicketReservationApp">
 
         <activity
-            android:name=".LogInActivity"
+            android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
+                <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
-        <activity android:name=".MainActivity" android:exported="false" />
+        <activity android:name=".LogInActivity" android:exported="false" />
         <activity android:name=".RegisterActivity" android:exported="false" />
-
+        <activity android:name=".ConfirmEmailActivity" android:exported="false" />
+        <activity android:name=".ConfirmPhoneActivity" android:exported="false" />
         <activity android:name=".AdminActivity" android:exported="false" />
 
     </application>
