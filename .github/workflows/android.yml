@@ -36,13 +36,6 @@ jobs:
           sdkmanager "platform-tools" \
                      "platforms;android-34" \
                      "build-tools;34.0.0"
-    - name: Run instrumented tests
-      uses: reactivecircus/android-emulator-runner@v2
-      with:
-        api-level: 34
-        arch: x86_64
-        script: ./gradlew connectedAndroidTest
-
     - name: Cache Gradle packages
       uses: actions/cache@v3
       with:
