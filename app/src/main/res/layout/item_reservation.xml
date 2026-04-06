@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="16dp"
+    android:layout_marginVertical="8dp"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="4dp"
+    app:strokeColor="#E0E0E0"
+    app:strokeWidth="1dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/tvReservationEventName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="#212121"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            tools:text="Event Name" />
+
+        <TextView
+            android:id="@+id/tvReservationCategory"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/bg_category_badge"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="4dp"
+            android:textColor="#FFFFFF"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            tools:text="Category" />
+
+        <TextView
+            android:id="@+id/tvReservationLocation"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:drawableStart="@drawable/location"
+            android:drawablePadding="8dp"
+            android:gravity="center_vertical"
+            android:textColor="#757575"
+            tools:text="Event Location" />
+
+        <TextView
+            android:id="@+id/tvReservationEventDate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:drawableStart="@drawable/calendar"
+            android:drawablePadding="8dp"
+            android:gravity="center_vertical"
+            android:textColor="#757575"
+            tools:text="Oct 24, 2026 • 08:00 PM" />
+
+        <TextView
+            android:id="@+id/tvReservationTicketCount"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:textColor="#455A64"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            tools:text="Tickets: 2" />
+
+        <TextView
+            android:id="@+id/tvReservationStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:textColor="#2E7D32"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            tools:text="Status: Confirmed" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnCancelReservation"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:layout_gravity="end"
+            android:text="@string/cancel_reservation"
+            android:textColor="#E53935" />
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

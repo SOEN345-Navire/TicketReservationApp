@@ -2,19 +2,52 @@ package com.example.ticketreservationapp;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
+import com.firebase.ui.firestore.FirestoreRecyclerOptions;
+import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.tabs.TabLayout;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
 
-import java.util.Objects;
+import java.util.HashMap;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
+
+    private static final String FULL_EVENT_MESSAGE = "Event is full, no tickets are available";
+    private static final String NOT_ENOUGH_TICKETS_MESSAGE = "Not enough tickets available for selected quantity";
+    private static final String STATUS_CONFIRMED = "confirmed";
+    private static final String STATUS_CANCELLED = "cancelled";
+
+    private final FirebaseFirestore db = FirebaseFirestore.getInstance();
+    private final CollectionReference eventsRef = db.collection("events");
+    private final CollectionReference reservationsRef = db.collection("reservations");
+    private EventAdapter eventAdapter;
+    private ReservationAdapter reservationAdapter;
+    private RecyclerView rvEvents;
+    private RecyclerView rvReservations;
+    private TextView tvEmptyReservations;
+    private MaterialToolbar toolbar;
+    private TabLayout reservationsTabs;
+    private int selectedReservationsFilterTab = 0;
 
     FirebaseAuth auth;
 
@@ -32,19 +65,33 @@ public class MainActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
-        initAuth();
+        rvEvents = findViewById(R.id.rvEvents);
+        rvReservations = findViewById(R.id.rvReservations);
+        tvEmptyReservations = findViewById(R.id.tvEmptyReservations);
+        toolbar = findViewById(R.id.mainToolbar);
+        reservationsTabs = findViewById(R.id.tabsReservations);
 
+        initAuth();
+        initEventsRecyclerView();
+        initReservationsRecyclerView();
     }
 
     @Override
     protected void onStart() {
         super.onStart();
+        if (reservationAdapter == null && auth.getCurrentUser() != null) {
+            initReservationsRecyclerView();
+        }
+        if (eventAdapter != null) eventAdapter.startListening();
+        if (reservationAdapter != null) reservationAdapter.startListening();
         auth.addAuthStateListener(authStateListener);
     }
 
     @Override
     protected void onStop() {
         super.onStop();
+        if (eventAdapter != null) eventAdapter.stopListening();
+        if (reservationAdapter != null) reservationAdapter.stopListening();
         auth.removeAuthStateListener(authStateListener);
     }
 
@@ -56,8 +103,7 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        //Check if user is verified
-        if (!user.isEmailVerified() && user.getEmail() != null && Objects.requireNonNull(user.getEmail()).matches(Authentification.emailRegex)) {
+        if (!user.isEmailVerified() && user.getEmail() != null && user.getEmail().matches(Authentification.emailRegex)) {
             startActivity(new Intent(MainActivity.this, ConfirmEmailActivity.class));
            finish();
         }
@@ -80,8 +126,217 @@ public class MainActivity extends AppCompatActivity {
     private void initAuth() {
         auth = FirebaseAuth.getInstance();
         Button logout = findViewById(R.id.logout);
+        BottomNavigationView bottomNavigation = findViewById(R.id.bottomNav);
+
         logout.setOnClickListener(v -> auth.signOut());
+
+        bottomNavigation.setSelectedItemId(R.id.nav_events);
+        bottomNavigation.setOnItemSelectedListener(item -> {
+            if (item.getItemId() == R.id.nav_reservations) {
+                showReservationsTab();
+                return true;
+            }
+            if (item.getItemId() == R.id.nav_events) {
+                showEventsTab();
+                return true;
+            }
+            return false;
+        });
+
+        showEventsTab();
     }
 
+    private void initEventsRecyclerView() {
+        Query query = eventsRef.orderBy("date", Query.Direction.ASCENDING);
+        FirestoreRecyclerOptions<Event> options = new FirestoreRecyclerOptions.Builder<Event>()
+                .setQuery(query, Event.class)
+                .build();
+
+        eventAdapter = new EventAdapter(options, this::reserveTicket);
+
+        rvEvents.setLayoutManager(new LinearLayoutManager(this));
+        rvEvents.setAdapter(eventAdapter);
+        rvEvents.setHasFixedSize(true);
+    }
+
+    private void initReservationsRecyclerView() {
+        FirebaseUser currentUser = auth.getCurrentUser();
+        if (currentUser == null) {
+            return;
+        }
+
+        if (reservationsTabs.getTabCount() == 0) {
+            reservationsTabs.addTab(reservationsTabs.newTab().setText(R.string.reservations_tab_active));
+            reservationsTabs.addTab(reservationsTabs.newTab().setText(R.string.reservations_tab_past));
+            reservationsTabs.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+                @Override
+                public void onTabSelected(TabLayout.Tab tab) {
+                    selectedReservationsFilterTab = tab.getPosition();
+                    bindReservationsAdapter();
+                }
+
+                @Override
+                public void onTabUnselected(TabLayout.Tab tab) {
+                }
+
+                @Override
+                public void onTabReselected(TabLayout.Tab tab) {
+                }
+            });
+        }
+
+        rvReservations.setLayoutManager(new LinearLayoutManager(this));
+        rvReservations.setHasFixedSize(true);
+
+        bindReservationsAdapter();
+    }
+
+
+    private void bindReservationsAdapter() {
+        FirebaseUser currentUser = auth.getCurrentUser();
+        if (currentUser == null) {
+            return;
+        }
+
+        String filterStatus = selectedReservationsFilterTab == 0 ? STATUS_CONFIRMED : STATUS_CANCELLED;
+        Query query = reservationsRef
+                .whereEqualTo("userId", currentUser.getUid())
+                .whereEqualTo("status", filterStatus);
+
+        FirestoreRecyclerOptions<Reservation> options = new FirestoreRecyclerOptions.Builder<Reservation>()
+                .setQuery(query, Reservation.class)
+                .build();
+
+        if (reservationAdapter != null) {
+            reservationAdapter.stopListening();
+        }
+
+        reservationAdapter = new ReservationAdapter(options, this::updateReservationsEmptyState, this::confirmCancelReservation);
+        rvReservations.setAdapter(reservationAdapter);
+
+        reservationAdapter.startListening();
+
+        updateReservationsEmptyState(reservationAdapter.getItemCount() == 0);
+    }
+
+    private void showEventsTab() {
+        rvEvents.setVisibility(View.VISIBLE);
+        reservationsTabs.setVisibility(View.GONE);
+        rvReservations.setVisibility(View.GONE);
+        tvEmptyReservations.setVisibility(View.GONE);
+        toolbar.setTitle("Book Events");
+    }
+
+    private void showReservationsTab() {
+        rvEvents.setVisibility(View.GONE);
+        reservationsTabs.setVisibility(View.VISIBLE);
+        rvReservations.setVisibility(View.VISIBLE);
+        toolbar.setTitle(getString(R.string.my_reservations));
+
+        if (reservationAdapter == null) {
+            initReservationsRecyclerView();
+        }
+
+        boolean isEmpty = reservationAdapter == null || reservationAdapter.getItemCount() == 0;
+        updateReservationsEmptyState(isEmpty);
+    }
+
+    private void updateReservationsEmptyState(boolean isEmpty) {
+        boolean isReservationsVisible = rvReservations.getVisibility() == View.VISIBLE;
+        tvEmptyReservations.setVisibility(isReservationsVisible && isEmpty ? View.VISIBLE : View.GONE);
+    }
+
+    private void confirmCancelReservation(Reservation reservation) {
+        new MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.cancel_reservation)
+                .setMessage(R.string.cancel_reservation_confirmation)
+                .setPositiveButton(R.string.cancel_reservation, (dialog, which) -> cancelReservation(reservation))
+                .setNegativeButton(android.R.string.no, null)
+                .show();
+    }
+
+    private void cancelReservation(Reservation reservation) {
+        DocumentReference reservationRef = reservationsRef.document(reservation.getId());
+
+        db.runTransaction(transaction -> {
+            DocumentSnapshot reservationSnapshot = transaction.get(reservationRef);
+
+            String status = reservationSnapshot.getString("status");
+            if (!STATUS_CONFIRMED.equals(status)) {
+                throw new IllegalStateException("Reservation already cancelled");
+            }
+
+            String eventId = reservationSnapshot.getString("eventId");
+            int ticketCount = Math.max(1, reservationSnapshot.getLong("ticketCount").intValue());
+
+            DocumentReference eventRef = eventsRef.document(eventId);
+            DocumentSnapshot eventSnapshot = transaction.get(eventRef);
+            int reservedPlaces = eventSnapshot.getLong("reservedPlaces").intValue();
+
+            int updatedReservedPlaces = Math.max(0, reservedPlaces - ticketCount);
+            transaction.update(eventRef, "reservedPlaces", updatedReservedPlaces);
+            transaction.update(reservationRef, "status", STATUS_CANCELLED, "cancelledAt", FieldValue.serverTimestamp());
+
+            return ticketCount;
+        }).addOnSuccessListener(ticketCount -> Toast.makeText(
+                this,
+                getString(R.string.reservation_cancelled_success, ticketCount),
+                Toast.LENGTH_LONG
+        ).show()).addOnFailureListener(e -> {
+            String message = e.getMessage();
+            if ("Reservation already cancelled".equals(message)) {
+                Toast.makeText(this, R.string.reservation_already_cancelled, Toast.LENGTH_LONG).show();
+                return;
+            }
+            Toast.makeText(this, R.string.cancel_reservation_failed, Toast.LENGTH_LONG).show();
+        });
+    }
+
+    private void reserveTicket(Event event, int ticketCount) {
+        FirebaseUser currentUser = auth.getCurrentUser();
+        if (currentUser == null) {
+            Toast.makeText(this, "Please log in to book tickets.", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        String userId = currentUser.getUid();
+        DocumentReference reservationRef = reservationsRef.document();
+
+        db.runTransaction(transaction -> {
+            DocumentReference eventRef = eventsRef.document(event.getId());
+            DocumentSnapshot snapshot = transaction.get(eventRef);
+
+            int reservedPlaces = snapshot.getLong("reservedPlaces").intValue();
+            int maxPlaces = snapshot.getLong("maxPlaces").intValue();
+
+            if (reservedPlaces + ticketCount > maxPlaces) {
+                throw new IllegalStateException(ticketCount == 1 ? FULL_EVENT_MESSAGE : NOT_ENOUGH_TICKETS_MESSAGE);
+            }
+
+            Map<String, Object> reservation = new HashMap<>();
+            reservation.put("userId", userId);
+            reservation.put("eventId", event.getId());
+            reservation.put("eventName", snapshot.getString("name"));
+            reservation.put("eventLocation", snapshot.getString("location"));
+            reservation.put("eventCategory", snapshot.getString("category"));
+            reservation.put("eventDate", snapshot.getTimestamp("date"));
+            reservation.put("ticketCount", ticketCount);
+            reservation.put("status", STATUS_CONFIRMED);
+
+            transaction.update(eventRef, "reservedPlaces", reservedPlaces + ticketCount);
+            transaction.set(reservationRef, reservation);
+            return null;
+        }).addOnSuccessListener(unused ->
+                Toast.makeText(this, ticketCount + " ticket(s) booked! Reservation confirmed.", Toast.LENGTH_SHORT).show()
+        ).addOnFailureListener(e -> {
+            String message = FULL_EVENT_MESSAGE;
+            if (NOT_ENOUGH_TICKETS_MESSAGE.equals(e.getMessage())) {
+                message = NOT_ENOUGH_TICKETS_MESSAGE;
+            } else if (!FULL_EVENT_MESSAGE.equals(e.getMessage())) {
+                message = "Unable to book ticket right now. Please try again.";
+            }
+            Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+        });
+    }
 
 }

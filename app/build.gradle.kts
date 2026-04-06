@@ -1,3 +1,6 @@
+import org.gradle.api.tasks.testing.Test
+import org.gradle.testing.jacoco.plugins.JacocoTaskExtension
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.google.gms.google.services)
@@ -65,6 +68,10 @@ dependencies {
     implementation(libs.firebase.ui.firestore)
     implementation(libs.firebase.analytics)
 }
-tasks.withType<Test> {
+tasks.withType<Test>().configureEach {
     useJUnit()
+    extensions.configure(JacocoTaskExtension::class.java) {
+        isIncludeNoLocationClasses = true
+        excludes = listOf("jdk.internal.*")
+    }
 }
