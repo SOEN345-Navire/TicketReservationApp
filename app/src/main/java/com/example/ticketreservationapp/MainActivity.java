@@ -27,7 +27,9 @@ import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 
+import java.util.Calendar;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
@@ -74,6 +76,11 @@ public class MainActivity extends AppCompatActivity {
         initAuth();
         initEventsRecyclerView();
         initReservationsRecyclerView();
+
+        Button btnFilter = findViewById(R.id.btnFilter);
+        btnFilter.setOnClickListener(v -> showFilterDialog());
+        Button btnClearFilters = findViewById(R.id.btnClearFilters);
+        btnClearFilters.setOnClickListener(v -> showAllEvents());
     }
 
     @Override
@@ -337,6 +344,157 @@ public class MainActivity extends AppCompatActivity {
             }
             Toast.makeText(this, message, Toast.LENGTH_LONG).show();
         });
+    }
+
+    private void bindEventsAdapter(Query query) {
+        FirestoreRecyclerOptions<Event> options =
+                new FirestoreRecyclerOptions.Builder<Event>()
+                        .setQuery(query, Event.class)
+                        .build();
+
+        if (eventAdapter != null) {
+            eventAdapter.stopListening();
+        }
+
+        eventAdapter = new EventAdapter(options, this::reserveTicket);
+        rvEvents.setAdapter(eventAdapter);
+        eventAdapter.startListening();
+    }
+
+    private void showAllEvents() {
+        Query q = eventsRef.orderBy("date", Query.Direction.ASCENDING);
+        bindEventsAdapter(q);
+    }
+
+    private void filterByLocationPrefix(String userInput) {
+        String prefix = userInput.trim().toLowerCase(Locale.getDefault());
+
+        if (prefix.isEmpty()) {
+            showAllEvents();
+            return;
+        }
+
+        Query q = eventsRef
+                .orderBy("locationLower")
+                .startAt(prefix)
+                .endAt(prefix + "\uf8ff");
+
+        bindEventsAdapter(q);
+    }
+
+    private void filterByCategory(String userInput) {
+        String category = userInput.trim().toUpperCase(Locale.getDefault());
+
+        if (category.isEmpty()) {
+            showAllEvents();
+            return;
+        }
+
+        Query q = eventsRef
+                .whereEqualTo("category", category)
+                .orderBy("date", Query.Direction.ASCENDING);
+
+        bindEventsAdapter(q);
+    }
+
+    private void filterBySingleDate(Calendar selectedDay) {
+        Calendar start = (Calendar) selectedDay.clone();
+        start.set(Calendar.HOUR_OF_DAY, 0);
+        start.set(Calendar.MINUTE, 0);
+        start.set(Calendar.SECOND, 0);
+        start.set(Calendar.MILLISECOND, 0);
+
+        Calendar end = (Calendar) selectedDay.clone();
+        end.set(Calendar.HOUR_OF_DAY, 23);
+        end.set(Calendar.MINUTE, 59);
+        end.set(Calendar.SECOND, 59);
+        end.set(Calendar.MILLISECOND, 999);
+
+        com.google.firebase.Timestamp startTs = new com.google.firebase.Timestamp(start.getTime());
+        com.google.firebase.Timestamp endTs = new com.google.firebase.Timestamp(end.getTime());
+
+        Query q = eventsRef
+                .whereGreaterThanOrEqualTo("date", startTs)
+                .whereLessThanOrEqualTo("date", endTs)
+                .orderBy("date", Query.Direction.ASCENDING);
+
+        bindEventsAdapter(q);
+    }
+
+    private void showFilterDialog() {
+        String[] options = new String[] {
+                "Search by Location",
+                "Filter by Category",
+                "Filter by Date",
+        };
+
+        new MaterialAlertDialogBuilder(this)
+                .setTitle("Filter Events")
+                .setItems(options, (dialog, which) -> {
+                    switch (which) {
+                        case 0:
+                            showLocationInputDialog();
+                            break;
+                        case 1:
+                            showCategoryInputDialog();
+                            break;
+                        case 2:
+                            showDatePickerDialog();
+                            break;
+                        case 3:
+                            showAllEvents();
+                            break;
+                    }
+                })
+                .show();
+    }
+
+    private void showLocationInputDialog() {
+        final com.google.android.material.textfield.TextInputEditText input =
+                new com.google.android.material.textfield.TextInputEditText(this);
+        input.setHint("Type location prefix (e.g., Cir)");
+
+        new MaterialAlertDialogBuilder(this)
+                .setTitle("Search by Location")
+                .setView(input)
+                .setPositiveButton("Search", (d, w) -> {
+                    String text = input.getText() == null ? "" : input.getText().toString();
+                    filterByLocationPrefix(text);
+                })
+                .setNegativeButton(android.R.string.cancel, null)
+                .show();
+    }
+
+    private void showCategoryInputDialog() {
+        final com.google.android.material.textfield.TextInputEditText input =
+                new com.google.android.material.textfield.TextInputEditText(this);
+        input.setHint("Type category (e.g., SPORTS)");
+
+        new MaterialAlertDialogBuilder(this)
+                .setTitle("Filter by Category")
+                .setView(input)
+                .setPositiveButton("Apply", (d, w) -> {
+                    String text = input.getText() == null ? "" : input.getText().toString();
+                    filterByCategory(text);
+                })
+                .setNegativeButton(android.R.string.cancel, null)
+                .show();
+    }
+
+    private void showDatePickerDialog() {
+        Calendar cal = Calendar.getInstance();
+
+        new android.app.DatePickerDialog(
+                this,
+                (view, year, month, dayOfMonth) -> {
+                    Calendar selected = Calendar.getInstance();
+                    selected.set(year, month, dayOfMonth);
+                    filterBySingleDate(selected);
+                },
+                cal.get(Calendar.YEAR),
+                cal.get(Calendar.MONTH),
+                cal.get(Calendar.DAY_OF_MONTH)
+        ).show();
     }
 
 }
