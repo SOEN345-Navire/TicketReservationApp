@@ -12,4 +12,19 @@
     <string name="confirm_button">Continue</string>
     <string name="code_hint">Enter the code sent to your phone</string>
     <string name="logout_button">Log Out</string>
+    <string name="my_reservations">My Reservations</string>
+    <string name="no_events_found">No events found</string>
+    <string name="nav_events">Events</string>
+    <string name="nav_reservations">Reservations</string>
+    <string name="reservations_tab_active">Active</string>
+    <string name="reservations_tab_past">Past / Cancelled</string>
+    <string name="tickets_count">Tickets: %1$d</string>
+    <string name="status_confirmed">Status: Confirmed</string>
+    <string name="status_cancelled">Status: Cancelled</string>
+    <string name="cancel_reservation">Cancel Reservation</string>
+    <string name="reservation_cancelled">Cancelled</string>
+    <string name="cancel_reservation_confirmation">Are you sure you want to cancel this reservation?</string>
+    <string name="reservation_cancelled_success">Reservation cancelled. %1$d ticket(s) released.</string>
+    <string name="reservation_already_cancelled">This reservation is already cancelled.</string>
+    <string name="cancel_reservation_failed">Unable to cancel reservation right now. Please try again.</string>
 </resources>
