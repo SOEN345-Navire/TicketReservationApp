@@ -29,4 +29,5 @@
     <string name="cancel_reservation_failed">Unable to cancel reservation right now. Please try again.</string>
     <string name="filter_events">Filter events</string>
     <string name="clear_filters">Clear Filter</string>
+    <string name="filter_results">filter results</string>
 </resources>
