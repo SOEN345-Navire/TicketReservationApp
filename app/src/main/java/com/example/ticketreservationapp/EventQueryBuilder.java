@@ -14,40 +14,32 @@ public final class EventQueryBuilder {
         return eventsRef.orderBy("date", Query.Direction.ASCENDING);
     }
 
-    public static Query build(CollectionReference eventsRef, EventFilter filter) {
+    // for unit-tests
+    static EventQuerySpec toSpec(EventFilter filter) {
         if (filter == null || filter.type() == EventFilter.Type.NONE) {
-            return baseQuery(eventsRef);
+            return EventQuerySpec.none();
         }
 
-        switch (filter.type()) {
-            case LOCATION_PREFIX: {
-                final String raw = filter.text();
-                final String prefix = (raw == null ? "" : raw.trim())
-                        .toLowerCase(Locale.getDefault());
-
-                if (prefix.isEmpty()) return baseQuery(eventsRef);
-
-                return eventsRef
-                        .orderBy("locationLower")
-                        .startAt(prefix)
-                        .endAt(prefix + "\uf8ff");
+        return switch (filter.type()) {
+            case LOCATION_PREFIX -> {
+                String raw = filter.text();
+                String prefix = (raw == null ? "" : raw.trim()).toLowerCase(Locale.getDefault());
+                yield prefix.isEmpty()
+                        ? EventQuerySpec.none()
+                        : new EventQuerySpec(EventQuerySpec.Type.LOCATION_PREFIX, prefix, null, null);
             }
 
-            case CATEGORY: {
-                final String raw = filter.text();
-                final String cat = (raw == null ? "" : raw.trim())
-                        .toUpperCase(Locale.getDefault());
-
-                if (cat.isEmpty()) return baseQuery(eventsRef);
-
-                return eventsRef
-                        .whereEqualTo("category", cat)
-                        .orderBy("date", Query.Direction.ASCENDING);
+            case CATEGORY -> {
+                String raw = filter.text();
+                String cat = (raw == null ? "" : raw.trim()).toUpperCase(Locale.getDefault());
+                yield cat.isEmpty()
+                        ? EventQuerySpec.none()
+                        : new EventQuerySpec(EventQuerySpec.Type.CATEGORY, cat, null, null);
             }
 
-            case SINGLE_DATE: {
+            case SINGLE_DATE -> {
                 Calendar selectedDay = filter.day();
-                if (selectedDay == null) return baseQuery(eventsRef);
+                if (selectedDay == null) yield EventQuerySpec.none();
 
                 Calendar start = (Calendar) selectedDay.clone();
                 start.set(Calendar.HOUR_OF_DAY, 0);
@@ -61,8 +53,43 @@ public final class EventQueryBuilder {
                 end.set(Calendar.SECOND, 59);
                 end.set(Calendar.MILLISECOND, 999);
 
-                Timestamp startTs = new Timestamp(start.getTime());
-                Timestamp endTs = new Timestamp(end.getTime());
+                yield new EventQuerySpec(
+                        EventQuerySpec.Type.SINGLE_DATE,
+                        "",
+                        start.getTime(),
+                        end.getTime()
+                );
+            }
+
+            default -> EventQuerySpec.none();
+        };
+    }
+
+    // data logic
+    public static Query build(CollectionReference eventsRef, EventFilter filter) {
+        EventQuerySpec spec = toSpec(filter);
+
+        if (spec.type() == EventQuerySpec.Type.NONE) {
+            return baseQuery(eventsRef);
+        }
+
+        switch (spec.type()) {
+            case LOCATION_PREFIX: {
+                String prefix = spec.normalizedText();
+                return eventsRef
+                        .orderBy("locationLower")
+                        .startAt(prefix)
+                        .endAt(prefix + "\uf8ff");
+            }
+
+            case CATEGORY:
+                return eventsRef
+                        .whereEqualTo("category", spec.normalizedText())
+                        .orderBy("date", Query.Direction.ASCENDING);
+
+            case SINGLE_DATE: {
+                Timestamp startTs = new Timestamp(spec.startInclusive());
+                Timestamp endTs = new Timestamp(spec.endInclusive());
 
                 return eventsRef
                         .whereGreaterThanOrEqualTo("date", startTs)
