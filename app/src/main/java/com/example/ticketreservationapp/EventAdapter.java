@@ -21,22 +21,29 @@ public class EventAdapter extends FirestoreRecyclerAdapter<Event, EventAdapter.E
     private static final String AVAILABLE_EVENT_MESSAGE = "Tickets available";
     private final boolean isAdminMode;
     private final ReserveListener reserveListener;
+    private final EmptyStateListener emptyStateListener;
 
     @FunctionalInterface
     public interface ReserveListener {
         void onReserve(Event event, int quantity);
     }
-
-    public EventAdapter(@NonNull FirestoreRecyclerOptions<Event> options, ReserveListener reserveListener) {
+    public interface EmptyStateListener {
+        void onEmptyStateChanged(boolean isEmpty);
+    }
+    public EventAdapter(@NonNull FirestoreRecyclerOptions<Event> options, ReserveListener reserveListener, EmptyStateListener emptyStateListener) {
         super(options);
         this.isAdminMode = false;
         this.reserveListener = reserveListener;
+        this.emptyStateListener = emptyStateListener;
     }
-
+    public EventAdapter(@NonNull FirestoreRecyclerOptions<Event> options, ReserveListener reserveListener) {
+        this(options, reserveListener, null);
+    }
     public EventAdapter(@NonNull FirestoreRecyclerOptions<Event> options) {
         super(options);
         this.isAdminMode = true;
         this.reserveListener = null;
+        this.emptyStateListener = null;
     }
 
     @Override
@@ -53,7 +60,13 @@ public class EventAdapter extends FirestoreRecyclerAdapter<Event, EventAdapter.E
         View v = layoutInflater.inflate(R.layout.item_event, parent, false);
         return new EventHolder(v);
     }
-
+    @Override
+    public void onDataChanged() {
+        super.onDataChanged();
+        if (emptyStateListener != null) {
+            emptyStateListener.onEmptyStateChanged(getItemCount() == 0);
+        }
+    }
     class EventHolder extends RecyclerView.ViewHolder {
         private final TextView tvName, tvCategory, tvLocation, tvDateTime, tvReservedPlaces, tvMaxPlaces, tvAvailabilityStatus;
         private final TextView tvTicketQuantity;

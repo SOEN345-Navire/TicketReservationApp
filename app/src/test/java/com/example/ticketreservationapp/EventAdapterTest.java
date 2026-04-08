@@ -229,4 +229,18 @@ public class EventAdapterTest {
         assertTrue(activity.editCalled);
         assertTrue(activity.deleteCalled);
     }
+    @Test
+    public void onDataChanged_notifiesEmptyStateListener_whenItsEmpty() {
+        AtomicReference<Boolean> empty = new AtomicReference<>(null);
+
+        EventAdapter adapter = new EventAdapter(
+                mockOptions(),
+                (event, quantity) -> {},
+                empty::set
+        );
+
+        adapter.onDataChanged();
+
+        assertEquals(Boolean.TRUE, empty.get());
+    }
 }
