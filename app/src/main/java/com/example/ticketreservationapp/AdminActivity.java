@@ -37,7 +37,7 @@ import java.util.Objects;
 public class AdminActivity extends AppCompatActivity {
 
     private final FirebaseFirestore db = FirebaseFirestore.getInstance();
-    private final CollectionReference eventsRef = db.collection("events");
+    private CollectionReference eventsRef = db.collection("events");
     private EventAdapter adapter;
     private RecyclerView recyclerView;
 
@@ -237,5 +237,8 @@ public class AdminActivity extends AppCompatActivity {
         super.onStop();
         if (adapter != null) adapter.stopListening();
         auth.removeAuthStateListener(authStateListener);
+    }
+    protected void setEventsRef(CollectionReference ref) {
+        this.eventsRef = ref;
     }
 }
