@@ -27,6 +27,7 @@ import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -48,7 +49,9 @@ public class MainActivity extends AppCompatActivity {
     private MaterialToolbar toolbar;
     private TabLayout reservationsTabs;
     private int selectedReservationsFilterTab = 0;
-
+    private TextView tvNoMatchingResultsFromFilter;
+    private boolean filterApplied = false;
+    private final EventAdapter.EmptyStateListener eventsEmptyListener = empty -> refreshEventsEmptyUi();
     FirebaseAuth auth;
 
     FirebaseAuth.AuthStateListener authStateListener = new FirebaseAuth.AuthStateListener() {
@@ -71,9 +74,16 @@ public class MainActivity extends AppCompatActivity {
         toolbar = findViewById(R.id.mainToolbar);
         reservationsTabs = findViewById(R.id.tabsReservations);
 
+        tvNoMatchingResultsFromFilter = findViewById(R.id.tvNoMatchingResultsFromFilter);
+
         initAuth();
         initEventsRecyclerView();
         initReservationsRecyclerView();
+
+        Button btnFilter = findViewById(R.id.btnFilter);
+        btnFilter.setOnClickListener(v -> showFilterDialog());
+        Button btnClearFilters = findViewById(R.id.btnClearFilters);
+        btnClearFilters.setOnClickListener(v -> applyFilter(EventFilter.none()));
     }
 
     @Override
@@ -152,7 +162,7 @@ public class MainActivity extends AppCompatActivity {
                 .setQuery(query, Event.class)
                 .build();
 
-        eventAdapter = new EventAdapter(options, this::reserveTicket);
+        eventAdapter = new EventAdapter(options, this::reserveTicket, eventsEmptyListener);
 
         rvEvents.setLayoutManager(new LinearLayoutManager(this));
         rvEvents.setAdapter(eventAdapter);
@@ -218,13 +228,23 @@ public class MainActivity extends AppCompatActivity {
 
         updateReservationsEmptyState(reservationAdapter.getItemCount() == 0);
     }
+    private void refreshEventsEmptyUi() {
+        if (tvNoMatchingResultsFromFilter == null) return;
 
+        boolean isEventsVisible = rvEvents.getVisibility() == View.VISIBLE;
+        boolean isEmpty = (eventAdapter == null) || eventAdapter.getItemCount() == 0;
+
+        tvNoMatchingResultsFromFilter.setVisibility(isEventsVisible && filterApplied && isEmpty ? View.VISIBLE : View.GONE
+        );
+    }
     private void showEventsTab() {
         rvEvents.setVisibility(View.VISIBLE);
         reservationsTabs.setVisibility(View.GONE);
         rvReservations.setVisibility(View.GONE);
         tvEmptyReservations.setVisibility(View.GONE);
         toolbar.setTitle("Book Events");
+
+        refreshEventsEmptyUi();
     }
 
     private void showReservationsTab() {
@@ -235,6 +255,10 @@ public class MainActivity extends AppCompatActivity {
 
         if (reservationAdapter == null) {
             initReservationsRecyclerView();
+        }
+
+        if (tvNoMatchingResultsFromFilter != null) {
+            tvNoMatchingResultsFromFilter.setVisibility(View.GONE);
         }
 
         boolean isEmpty = reservationAdapter == null || reservationAdapter.getItemCount() == 0;
@@ -339,4 +363,99 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    private void applyFilter(EventFilter filter) {
+        filterApplied = (filter != null && filter.type() != EventFilter.Type.NONE);
+        //android.util.Log.d("MainActivity", "applyFilter type=" + (filter == null ? "null" : filter.type()) + " filterApplied=" + filterApplied);
+        Query q = EventQueryBuilder.build(eventsRef, filter);
+        bindEventsAdapter(q);
+    }
+
+    private void bindEventsAdapter(Query query) {
+        FirestoreRecyclerOptions<Event> options =
+                new FirestoreRecyclerOptions.Builder<Event>()
+                        .setQuery(query, Event.class)
+                        .build();
+
+        if (eventAdapter != null) {
+            eventAdapter.stopListening();
+        }
+
+        eventAdapter = new EventAdapter(options, this::reserveTicket, eventsEmptyListener);
+        rvEvents.setAdapter(eventAdapter);
+        eventAdapter.startListening();
+
+        refreshEventsEmptyUi();
+    }
+
+    private void showFilterDialog() {
+        String[] options = new String[] {
+                "Search by Location",
+                "Filter by Category",
+                "Filter by Date",
+        };
+
+        new MaterialAlertDialogBuilder(this)
+                .setTitle("Filter Events")
+                .setItems(options, (dialog, which) -> {
+                    switch (which) {
+                        case 0:
+                            showLocationInputDialog();
+                            break;
+                        case 1:
+                            showCategoryInputDialog();
+                            break;
+                        case 2:
+                            showDatePickerDialog();
+                            break;
+                    }
+                })
+                .show();
+    }
+    private void showLocationInputDialog() {
+        final com.google.android.material.textfield.TextInputEditText input =
+                new com.google.android.material.textfield.TextInputEditText(this);
+
+        new MaterialAlertDialogBuilder(this)
+                .setTitle("Search by Location")
+                .setView(input)
+                .setPositiveButton("Search", (d, w) -> {
+                    String text = input.getText() == null ? "" : input.getText().toString();
+                    text = text.trim();
+                    applyFilter(EventFilter.locationPrefix(text));
+                })
+                .setNegativeButton(android.R.string.cancel, null)
+                .show();
+    }
+
+    private void showCategoryInputDialog() {
+        final com.google.android.material.textfield.TextInputEditText input =
+                new com.google.android.material.textfield.TextInputEditText(this);
+
+        new MaterialAlertDialogBuilder(this)
+                .setTitle("Filter by Category")
+                .setView(input)
+                .setPositiveButton("Apply", (d, w) -> {
+                    String text = input.getText() == null ? "" : input.getText().toString();
+                    text = text.trim();
+                    applyFilter(EventFilter.category(text));
+                })
+                .setNegativeButton(android.R.string.cancel, null)
+                .show();
+    }
+
+    private void showDatePickerDialog() {
+        Calendar cal = Calendar.getInstance();
+
+        new android.app.DatePickerDialog(
+                this,
+                (view, year, month, dayOfMonth) -> {
+                    Calendar selected = Calendar.getInstance();
+                    selected.set(year, month, dayOfMonth);
+                    applyFilter(EventFilter.singleDate(selected));
+                },
+                cal.get(Calendar.YEAR),
+                cal.get(Calendar.MONTH),
+                cal.get(Calendar.DAY_OF_MONTH)
+        ).show();
+    }
 }

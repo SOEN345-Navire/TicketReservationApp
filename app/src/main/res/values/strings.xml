@@ -27,4 +27,8 @@
     <string name="reservation_cancelled_success">Reservation cancelled. %1$d ticket(s) released.</string>
     <string name="reservation_already_cancelled">This reservation is already cancelled.</string>
     <string name="cancel_reservation_failed">Unable to cancel reservation right now. Please try again.</string>
+    <string name="filter_events">Filter events</string>
+    <string name="clear_filters">Clear Filter</string>
+    <string name="filter_results">filter results</string>
+    <string name="no_events_match_the_selected_filter_clear_filter_and_try_again">No events match the selected filter. Clear filter and try again.</string>
 </resources>

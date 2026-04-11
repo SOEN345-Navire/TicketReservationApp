@@ -31,6 +31,7 @@ import com.google.firebase.firestore.Query;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 
 public class AdminActivity extends AppCompatActivity {
@@ -177,19 +178,28 @@ public class AdminActivity extends AppCompatActivity {
             int maxPlaces = Integer.parseInt(maxStr);
             Timestamp date = new Timestamp(calendar.getTime());
 
+            // normalize for filtering
+            String locationSmallCaps = location.toLowerCase(Locale.getDefault());
+            String categoryBigCaps = category.toUpperCase(Locale.getDefault());
+
+            Map<String, Object> data = new java.util.HashMap<>();
+            data.put("name", name);
+            data.put("location", location);
+            data.put("locationLower", locationSmallCaps);
+            data.put("category", categoryBigCaps);
+            data.put("maxPlaces", maxPlaces);
+            data.put("date", date);
+
+
             if (isEdit) { // Update existing document
-                event.setName(name);
-                event.setLocation(location);
-                event.setCategory(category);
-                event.setMaxPlaces(maxPlaces);
-                event.setDate(date);
-                eventsRef.document(event.getId()).set(event).addOnSuccessListener(aVoid -> {
+                data.put("reservedPlaces", event.getReservedPlaces());
+                eventsRef.document(event.getId()).set(data).addOnSuccessListener(aVoid -> {
                     Toast.makeText(this, "Event Updated!", Toast.LENGTH_SHORT).show();
                     dialog.dismiss();
                 });
             } else { // Create brand new document
-                Event newEvent = new Event(name, date, location, category, 0, maxPlaces);
-                eventsRef.add(newEvent).addOnSuccessListener(ref -> {
+                data.put("reservedPlaces", 0);
+                eventsRef.add(data).addOnSuccessListener(ref -> {
                     Toast.makeText(this, "Event Added!", Toast.LENGTH_SHORT).show();
                     dialog.dismiss();
                 });
