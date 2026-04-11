@@ -37,7 +37,6 @@ public class ConfirmEmailActivity extends AppCompatActivity {
         reload.addOnCompleteListener(this, task -> {
             if (task.isSuccessful()) {
                 if (user.isEmailVerified()) {
-                    Authentification.setEmail(user.getEmail(), user.getUid());
                     startActivity(new Intent(ConfirmEmailActivity.this, MainActivity.class));
                     finish();
                 } else {
