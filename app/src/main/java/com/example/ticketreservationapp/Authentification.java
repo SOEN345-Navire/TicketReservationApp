@@ -30,5 +30,10 @@ public class Authentification {
         db.collection("users").document(uid).set(isAdminObj);
     }
 
-
+    public static void setEmail(String email, String uid) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        Map<String, String> emailObj = new HashMap<>();
+        emailObj.put("email", email);
+        db.collection("users").document(uid).set(emailObj);
+    }
 }

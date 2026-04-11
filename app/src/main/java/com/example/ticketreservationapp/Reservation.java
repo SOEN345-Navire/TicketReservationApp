@@ -1,5 +1,7 @@
 package com.example.ticketreservationapp;
 
+import androidx.annotation.NonNull;
+
 import com.google.firebase.Timestamp;
 
 public class Reservation {
@@ -13,7 +15,20 @@ public class Reservation {
     private Timestamp eventDate;
     private int ticketCount;
 
+
     public Reservation() {
+    }
+
+    public Reservation(String id, String userId, String eventId, String eventName, String eventLocation, String eventCategory, String status, Timestamp eventDate, int ticketCount) {
+        this.id = id;
+        this.userId = userId;
+        this.eventId = eventId;
+        this.eventName = eventName;
+        this.eventLocation = eventLocation;
+        this.eventCategory = eventCategory;
+        this.status = status;
+        this.eventDate = eventDate;
+        this.ticketCount = ticketCount;
     }
 
     public String getId() {
@@ -86,5 +101,19 @@ public class Reservation {
 
     public void setTicketCount(int ticketCount) {
         this.ticketCount = ticketCount;
+    }
+
+
+    @NonNull
+    @Override
+    public String toString(){
+        return ("Reservation:\n" +
+                "eventName: " + eventName + "\n" +
+                "eventLocation: " + eventLocation + "\n" +
+                "eventCategory: " + eventCategory + "\n" +
+                "status: " + status + "\n" +
+                "eventDate: " + eventDate.toDate() + "\n" +
+                "ticketCount: " + ticketCount + "\n"
+        );
     }
 }

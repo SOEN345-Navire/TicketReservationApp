@@ -290,6 +290,19 @@ public class MainActivity extends AppCompatActivity {
                 throw new IllegalStateException("Reservation already cancelled");
             }
 
+            Reservation emailReservation = new Reservation(
+                    reservation.getId(),
+                    reservation.getUserId(),
+                    reservation.getEventId(),
+                    reservation.getEventName(),
+                    reservation.getEventLocation(),
+                    reservation.getEventCategory(),
+                    STATUS_CANCELLED,
+                    reservation.getEventDate(),
+                    reservation.getTicketCount()
+            );
+            emailConfirmations.confirmReservation(auth.getCurrentUser(), emailReservation, "Reservation Cancelled", "A reservation has been cancelled: \n");
+
             String eventId = reservationSnapshot.getString("eventId");
             int ticketCount = Math.max(1, reservationSnapshot.getLong("ticketCount").intValue());
 
@@ -347,11 +360,25 @@ public class MainActivity extends AppCompatActivity {
             reservation.put("ticketCount", ticketCount);
             reservation.put("status", STATUS_CONFIRMED);
 
+            Reservation newReservation = new Reservation(
+                    reservationRef.getId(),
+                    userId,
+                    event.getId(),
+                    snapshot.getString("name"),
+                    snapshot.getString("location"),
+                    snapshot.getString("category"),
+                    STATUS_CONFIRMED,
+                    snapshot.getTimestamp("date"),
+                    ticketCount
+            );
+            emailConfirmations.confirmReservation(currentUser, newReservation, "Reservation Confirmed", "A new reservation has been made: \n");
+
             transaction.update(eventRef, "reservedPlaces", reservedPlaces + ticketCount);
             transaction.set(reservationRef, reservation);
             return null;
-        }).addOnSuccessListener(unused ->
-                Toast.makeText(this, ticketCount + " ticket(s) booked! Reservation confirmed.", Toast.LENGTH_SHORT).show()
+        }).addOnSuccessListener(unused -> {
+            Toast.makeText(this, ticketCount + " ticket(s) booked! Reservation confirmed.", Toast.LENGTH_SHORT).show();
+        }
         ).addOnFailureListener(e -> {
             String message = FULL_EVENT_MESSAGE;
             if (NOT_ENOUGH_TICKETS_MESSAGE.equals(e.getMessage())) {
