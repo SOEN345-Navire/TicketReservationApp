@@ -371,12 +371,12 @@ public class MainActivity extends AppCompatActivity {
                     snapshot.getTimestamp("date"),
                     ticketCount
             );
-            emailConfirmations.confirmReservation(currentUser, newReservation, "Reservation Confirmed", "A new reservation has been made: \n");
 
             transaction.update(eventRef, "reservedPlaces", reservedPlaces + ticketCount);
             transaction.set(reservationRef, reservation);
-            return null;
-        }).addOnSuccessListener(unused -> {
+            return newReservation;
+        }).addOnSuccessListener(newReservation -> {
+            emailConfirmations.confirmReservation(currentUser, newReservation, "Reservation Confirmed", "A new reservation has been made: \n");
             Toast.makeText(this, ticketCount + " ticket(s) booked! Reservation confirmed.", Toast.LENGTH_SHORT).show();
         }
         ).addOnFailureListener(e -> {
