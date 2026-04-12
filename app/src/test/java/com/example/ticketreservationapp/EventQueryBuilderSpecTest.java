@@ -1,11 +1,18 @@
 package com.example.ticketreservationapp;
 
 import static org.junit.Assert.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
+import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.Query;
 
 import org.junit.Test;
 
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Locale;
 import java.util.TimeZone;
 
 public class EventQueryBuilderSpecTest {
@@ -100,5 +107,75 @@ public class EventQueryBuilderSpecTest {
         assertEquals(59, endCal.get(Calendar.MINUTE));
         assertEquals(59, endCal.get(Calendar.SECOND));
         assertEquals(999, endCal.get(Calendar.MILLISECOND));
+    }
+
+    @Test
+    public void build_none_callsBaseQuery_orderByDate() {
+        CollectionReference eventsRef = mock(CollectionReference.class);
+        Query base = mock(Query.class);
+
+        when(eventsRef.orderBy("date", Query.Direction.ASCENDING)).thenReturn(base);
+
+        Query result = EventQueryBuilder.build(eventsRef, EventFilter.none());
+
+        assertSame(base, result);
+        verify(eventsRef).orderBy("date", Query.Direction.ASCENDING);
+    }
+
+    @Test
+    public void build_locationPrefix_chainsOrderByStartAtEndAt() {
+        CollectionReference eventsRef = mock(CollectionReference.class);
+        Query ordered = mock(Query.class);
+        Query started = mock(Query.class);
+        Query ended = mock(Query.class);
+
+        when(eventsRef.orderBy("locationLower")).thenReturn(ordered);
+        when(ordered.startAt("ny")).thenReturn(started);
+        when(started.endAt("ny" + "\uf8ff")).thenReturn(ended);
+
+        Query result = EventQueryBuilder.build(eventsRef, EventFilter.locationPrefix(" NY "));
+
+        assertSame(ended, result);
+        verify(eventsRef).orderBy("locationLower");
+        verify(ordered).startAt("ny");
+        verify(started).endAt("ny" + "\uf8ff");
+    }
+
+    @Test
+    public void build_category_callsWhereEqualTo_thenOrderByDate() {
+        CollectionReference eventsRef = mock(CollectionReference.class);
+        Query afterWhere = mock(Query.class);
+        Query afterOrder = mock(Query.class);
+
+        when(eventsRef.whereEqualTo("category", "MOVIES")).thenReturn(afterWhere);
+        when(afterWhere.orderBy("date", Query.Direction.ASCENDING)).thenReturn(afterOrder);
+
+        Query result = EventQueryBuilder.build(eventsRef, EventFilter.category("movies"));
+
+        assertSame(afterOrder, result);
+        verify(eventsRef).whereEqualTo("category", "MOVIES");
+        verify(afterWhere).orderBy("date", Query.Direction.ASCENDING);
+    }
+
+    @Test
+    public void build_singleDate_chainsDateRangeQuery() {
+        CollectionReference eventsRef = mock(CollectionReference.class);
+        Query q1 = mock(Query.class);
+        Query q2 = mock(Query.class);
+        Query q3 = mock(Query.class);
+
+        when(eventsRef.whereGreaterThanOrEqualTo(eq("date"), any(Timestamp.class))).thenReturn(q1);
+        when(q1.whereLessThanOrEqualTo(eq("date"), any(Timestamp.class))).thenReturn(q2);
+        when(q2.orderBy("date", Query.Direction.ASCENDING)).thenReturn(q3);
+
+        Calendar selected = Calendar.getInstance(Locale.CANADA);
+        selected.set(2026, Calendar.APRIL, 11, 10, 0, 0);
+
+        Query result = EventQueryBuilder.build(eventsRef, EventFilter.singleDate(selected));
+
+        assertSame(q3, result);
+        verify(eventsRef).whereGreaterThanOrEqualTo(eq("date"), any(Timestamp.class));
+        verify(q1).whereLessThanOrEqualTo(eq("date"), any(Timestamp.class));
+        verify(q2).orderBy("date", Query.Direction.ASCENDING);
     }
 }
