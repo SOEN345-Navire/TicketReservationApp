@@ -14,14 +14,17 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthUserCollisionException;
 
 
 public class RegisterActivity extends AppCompatActivity {
-    private EditText email, confirmPassword, password;
+    EditText email, confirmPassword, password;
 
-    private FirebaseAuth auth;
+    Button registerMail;
+    FirebaseAuth auth;
 
 
     @Override
@@ -37,7 +40,7 @@ public class RegisterActivity extends AppCompatActivity {
         password = findViewById(id.password_edittext);
         confirmPassword = findViewById(id.confirmPassword_edittext);
 
-        Button registerMail = findViewById(id.registerMail_button);
+        registerMail = findViewById(id.registerMail_button);
         registerMail.setOnClickListener(v -> registerWithEmail(email.getText().toString().trim().toLowerCase(),password.getText().toString().trim(),confirmPassword.getText().toString().trim()));
     }
 
@@ -60,26 +63,28 @@ public class RegisterActivity extends AppCompatActivity {
 
             // Register user with email and password
              auth.createUserWithEmailAndPassword(authString, pass)
-                     .addOnCompleteListener(this, task -> {
-                         // Registration successful
-                         if (task.isSuccessful()) {
-                             // Navigate to MainActivity
-                             Toast.makeText(RegisterActivity.this, "Registration successful!", Toast.LENGTH_LONG).show();
-                             startActivity(new Intent(RegisterActivity.this, ConfirmEmailActivity.class));
-                             finish();
-                         }
-                         // Registration failed
-                         //User is already registered
-                         else if (task.getException() instanceof FirebaseAuthUserCollisionException){
-                             Toast.makeText(RegisterActivity.this, "You're already register please log in", Toast.LENGTH_LONG).show();
-                             startActivity(new Intent(RegisterActivity.this, LogInActivity.class));
-                             finish();
-                         } else {
-                             Toast.makeText(RegisterActivity.this, "Registration failed! Please try again later", Toast.LENGTH_LONG).show();
-                         }
-                     });
+                     .addOnCompleteListener(this, this::handleRegistrationResult);
         } else{
             Toast.makeText(this, "Please enter a valid email", Toast.LENGTH_LONG).show();
+        }
+    }
+
+    public void handleRegistrationResult(Task<AuthResult> task) {
+        // Registration successful
+        if (task.isSuccessful()) {
+            // Navigate to MainActivity
+            Toast.makeText(RegisterActivity.this, "Registration successful!", Toast.LENGTH_LONG).show();
+            startActivity(new Intent(RegisterActivity.this, ConfirmEmailActivity.class));
+            finish();
+        }
+        // Registration failed
+        //User is already registered
+        else if (task.getException() instanceof FirebaseAuthUserCollisionException){
+            Toast.makeText(RegisterActivity.this, "You're already register please log in", Toast.LENGTH_LONG).show();
+            startActivity(new Intent(RegisterActivity.this, LogInActivity.class));
+            finish();
+        } else {
+            Toast.makeText(RegisterActivity.this, "Registration failed! Please try again later", Toast.LENGTH_LONG).show();
         }
     }
 }
