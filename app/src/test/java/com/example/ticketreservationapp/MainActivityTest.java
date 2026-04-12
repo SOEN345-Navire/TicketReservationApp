@@ -174,7 +174,7 @@ public class MainActivityTest {
 
         invokePrivate(activity, "checkUserStatus", new Class<?>[]{FirebaseUser.class}, new Object[]{null});
 
-        assertEquals(true, activity.isFinishing());
+        assert(activity.isFinishing());
     }
 
     private void invokePrivate(MainActivity activity, String methodName, Class<?>[] argTypes, Object... args) throws Exception {
