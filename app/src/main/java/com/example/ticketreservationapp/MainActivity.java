@@ -38,9 +38,23 @@ public class MainActivity extends AppCompatActivity {
     private static final String STATUS_CONFIRMED = "confirmed";
     private static final String STATUS_CANCELLED = "cancelled";
 
-    private final FirebaseFirestore db = FirebaseFirestore.getInstance();
-    private final CollectionReference eventsRef = db.collection("events");
-    private final CollectionReference reservationsRef = db.collection("reservations");
+    // to be able to override in tests
+    protected FirebaseAuth provideAuth() {
+        return FirebaseAuth.getInstance();
+    }
+    protected FirebaseFirestore provideDb() {
+        return FirebaseFirestore.getInstance();
+    }
+    protected CollectionReference provideEventsRef(FirebaseFirestore db) {
+        return db.collection("events");
+    }
+    protected CollectionReference provideReservationsRef(FirebaseFirestore db) {
+        return db.collection("reservations");
+    }
+    private FirebaseAuth auth;
+    private FirebaseFirestore db;
+    private CollectionReference eventsRef;
+    private CollectionReference reservationsRef;
     private EventAdapter eventAdapter;
     private ReservationAdapter reservationAdapter;
     private RecyclerView rvEvents;
@@ -52,8 +66,6 @@ public class MainActivity extends AppCompatActivity {
     private TextView tvNoMatchingResultsFromFilter;
     private boolean filterApplied = false;
     private final EventAdapter.EmptyStateListener eventsEmptyListener = empty -> refreshEventsEmptyUi();
-    FirebaseAuth auth;
-
     FirebaseAuth.AuthStateListener authStateListener = new FirebaseAuth.AuthStateListener() {
         @Override
         public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
@@ -67,6 +79,10 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
+        auth = provideAuth();
+        db = provideDb();
+        eventsRef = provideEventsRef(db);
+        reservationsRef = provideReservationsRef(db);
 
         rvEvents = findViewById(R.id.rvEvents);
         rvReservations = findViewById(R.id.rvReservations);
@@ -134,7 +150,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initAuth() {
-        auth = FirebaseAuth.getInstance();
         Button logout = findViewById(R.id.logout);
         BottomNavigationView bottomNavigation = findViewById(R.id.bottomNav);
 
