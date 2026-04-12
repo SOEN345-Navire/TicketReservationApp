@@ -29,6 +29,4 @@ public class Authentification {
         isAdminObj.put("isAdmin", isAdmin);
         db.collection("users").document(uid).set(isAdminObj);
     }
-
-
 }
