@@ -37,15 +37,27 @@ public class EmailConfirmationsTest {
         //When user is null, return false
         assertEquals(false, emailConfirmations.confirmReservation(null, reservation, "Subject", "Body"));
 
-        //When user email is null, return false
+        //Mock Firebase
+        FirebaseFirestore db = mock(FirebaseFirestore.class);
         FirebaseUser user = mock(FirebaseUser.class);
+
+        //when user email is null, and phone number is null, return false
         assertEquals(false, emailConfirmations.confirmReservation(user, reservation, "Subject", "Body"));
+
+        //When user email is null, and phone number is not null, return true
+        when(user.getPhoneNumber()).thenReturn("1234567890");
+        CollectionReference messagesCollection = mock(CollectionReference.class);
+        when(db.collection("messages")).thenReturn(messagesCollection);
+        //Mock static call to get instance to return the mocked instance
+        try (MockedStatic<FirebaseFirestore> mockedDB = mockStatic(FirebaseFirestore.class)) {
+            mockedDB.when(FirebaseFirestore::getInstance).thenReturn(db);
+            assertEquals(true, emailConfirmations.confirmReservation(user, reservation, "Subject", "Body"));
+        }
+
 
         //When user email is not null, return true
         when(user.getEmail()).thenReturn("test@gmail.com");
 
-        //Mock FirebaseFirestore to handle the calls in sendEmail
-        FirebaseFirestore db = mock(FirebaseFirestore.class);
         CollectionReference mailCollection = mock(CollectionReference.class);
         when(db.collection("mail")).thenReturn(mailCollection);
 
