@@ -68,7 +68,7 @@ public class EventAdapter extends FirestoreRecyclerAdapter<Event, EventAdapter.E
         }
     }
     class EventHolder extends RecyclerView.ViewHolder {
-        private final TextView tvName, tvCategory, tvLocation, tvDateTime, tvReservedPlaces, tvMaxPlaces, tvAvailabilityStatus;
+        private final TextView tvName, tvCategory, tvLocation, tvDateTime, tvReservedPlaces, tvMaxPlaces, tvAvailabilityStatus, tvStatus;
         private final TextView tvTicketQuantity;
         private final MaterialButton btnEdit, btnCancel, btnReserve;
         private final MaterialButton btnIncreaseTickets, btnDecreaseTickets;
@@ -84,6 +84,7 @@ public class EventAdapter extends FirestoreRecyclerAdapter<Event, EventAdapter.E
             tvReservedPlaces = itemView.findViewById(R.id.tvReservedPlaces);
             tvMaxPlaces = itemView.findViewById(R.id.tvMaxPlaces);
             tvAvailabilityStatus = itemView.findViewById(R.id.tvAvailabilityStatus);
+            tvStatus = itemView.findViewById(R.id.tvStatus);
             tvTicketQuantity = itemView.findViewById(R.id.tvTicketQuantity);
             btnEdit = itemView.findViewById(R.id.btnEdit);
             btnCancel = itemView.findViewById(R.id.btnCancel);
@@ -98,6 +99,7 @@ public class EventAdapter extends FirestoreRecyclerAdapter<Event, EventAdapter.E
             int maxPlaces = model.getMaxPlaces();
             int availableTickets = maxPlaces - reservedPlaces;
             boolean isFull = availableTickets == 0;
+            boolean isCancelled = "cancelled".equalsIgnoreCase(model.getStatus());
 
             tvName.setText(model.getName());
             tvLocation.setText(model.getLocation());
@@ -109,11 +111,25 @@ public class EventAdapter extends FirestoreRecyclerAdapter<Event, EventAdapter.E
 
             tvDateTime.setText(dateFormat.format(model.getDate().toDate()));
 
+            if (isCancelled) {
+                tvStatus.setVisibility(View.VISIBLE);
+                tvStatus.setText("CANCELLED");
+                tvStatus.getBackground().setTint(Color.parseColor("#FFCDD2"));
+                tvStatus.setTextColor(Color.parseColor("#C62828"));
+                tvAvailabilityStatus.setText("Event Cancelled");
+                tvAvailabilityStatus.setTextColor(Color.parseColor("#C62828"));
+            } else {
+                tvStatus.setVisibility(View.GONE);
+            }
+
             if (isAdminMode) {
                 btnEdit.setVisibility(View.VISIBLE);
                 btnCancel.setVisibility(View.VISIBLE);
                 btnReserve.setVisibility(View.GONE);
                 layoutQuantitySelector.setVisibility(View.GONE);
+
+                btnCancel.setEnabled(!isCancelled);
+                btnCancel.setAlpha(isCancelled ? 0.5f : 1.0f);
 
                 btnEdit.setOnClickListener(v -> {
                     if (v.getContext() instanceof AdminActivity) {
@@ -123,7 +139,7 @@ public class EventAdapter extends FirestoreRecyclerAdapter<Event, EventAdapter.E
 
                 btnCancel.setOnClickListener(v -> {
                     if (v.getContext() instanceof AdminActivity) {
-                        ((AdminActivity) v.getContext()).deleteEvent(model);
+                        ((AdminActivity) v.getContext()).cancelEvent(model);
                     }
                 });
                 return;
@@ -133,13 +149,15 @@ public class EventAdapter extends FirestoreRecyclerAdapter<Event, EventAdapter.E
             btnCancel.setVisibility(View.GONE);
             btnReserve.setVisibility(View.VISIBLE);
             layoutQuantitySelector.setVisibility(View.VISIBLE);
-            btnReserve.setEnabled(!isFull);
-            btnReserve.setAlpha(isFull ? 0.5f : 1f);
+            
+            boolean canReserve = !isFull && !isCancelled;
+            btnReserve.setEnabled(canReserve);
+            btnReserve.setAlpha(canReserve ? 1f : 0.5f);
 
-            final int[] selectedQuantity = {isFull ? 0 : 1};
+            final int[] selectedQuantity = {canReserve ? 1 : 0};
             tvTicketQuantity.setText(String.valueOf(selectedQuantity[0]));
             btnDecreaseTickets.setEnabled(selectedQuantity[0] > 1);
-            btnIncreaseTickets.setEnabled(!isFull && selectedQuantity[0] < availableTickets);
+            btnIncreaseTickets.setEnabled(canReserve && selectedQuantity[0] < availableTickets);
 
             btnDecreaseTickets.setOnClickListener(v -> {
                 if (selectedQuantity[0] <= 1) return;

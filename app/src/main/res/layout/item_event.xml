@@ -18,14 +18,38 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <TextView
-            android:id="@+id/tvEventName"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textColor="#212121"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            tools:text="Event Name" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/tvEventName"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textColor="#212121"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                tools:text="Event Name" />
+
+            <TextView
+                android:id="@+id/tvStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="2dp"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:textAllCaps="true"
+                android:background="@drawable/bg_category_badge"
+                android:visibility="gone"
+                tools:visibility="visible"
+                tools:text="CANCELLED"
+                tools:backgroundTint="#FFCDD2"
+                tools:textColor="#C62828"/>
+        </LinearLayout>
 
         <TextView
             android:id="@+id/tvDateTime"
