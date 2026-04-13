@@ -11,7 +11,7 @@ public class emailConfirmations {
     public static Boolean confirmReservation(FirebaseUser user, Reservation reservation, String subject, String body){
         if (user == null) return false;
         String email = user.getEmail();
-        if (email == null){
+        if (email == null || !email.matches(Authentification.emailRegex)){
             String phoneNumber = user.getPhoneNumber();
             if (phoneNumber == null) return false;
             body += reservation.toString();

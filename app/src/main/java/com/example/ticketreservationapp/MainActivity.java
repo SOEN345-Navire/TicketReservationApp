@@ -306,18 +306,6 @@ public class MainActivity extends AppCompatActivity {
                 throw new IllegalStateException("Reservation already cancelled");
             }
 
-            Reservation emailReservation = new Reservation(
-                    reservation.getId(),
-                    reservation.getUserId(),
-                    reservation.getEventId(),
-                    reservation.getEventName(),
-                    reservation.getEventLocation(),
-                    reservation.getEventCategory(),
-                    STATUS_CANCELLED,
-                    reservation.getEventDate(),
-                    reservation.getTicketCount()
-            );
-            emailConfirmations.confirmReservation(auth.getCurrentUser(), emailReservation, "Reservation Cancelled", "A reservation has been cancelled: \n");
 
             String eventId = reservationSnapshot.getString("eventId");
             int ticketCount = Math.max(1, reservationSnapshot.getLong("ticketCount").intValue());
@@ -331,11 +319,10 @@ public class MainActivity extends AppCompatActivity {
             transaction.update(reservationRef, "status", STATUS_CANCELLED, "cancelledAt", FieldValue.serverTimestamp());
 
             return ticketCount;
-        }).addOnSuccessListener(ticketCount -> Toast.makeText(
-                this,
-                getString(R.string.reservation_cancelled_success, ticketCount),
-                Toast.LENGTH_LONG
-        ).show()).addOnFailureListener(e -> {
+        }).addOnSuccessListener(ticketCount -> {
+            Toast.makeText(this, getString(R.string.reservation_cancelled_success, ticketCount), Toast.LENGTH_LONG).show();
+            emailConfirmations.confirmReservation(auth.getCurrentUser(), reservation, "Reservation Cancelled", "A reservation has been cancelled: \n");
+        }).addOnFailureListener(e -> {
             String message = e.getMessage();
             if ("Reservation already cancelled".equals(message)) {
                 Toast.makeText(this, R.string.reservation_already_cancelled, Toast.LENGTH_LONG).show();
