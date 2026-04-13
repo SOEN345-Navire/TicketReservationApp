@@ -24,9 +24,12 @@ import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
+import com.google.firebase.firestore.WriteBatch;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -36,8 +39,9 @@ import java.util.Objects;
 
 public class AdminActivity extends AppCompatActivity {
 
-    private final FirebaseFirestore db = FirebaseFirestore.getInstance();
+    private FirebaseFirestore db = FirebaseFirestore.getInstance();
     private CollectionReference eventsRef = db.collection("events");
+    private CollectionReference reservationsRef = db.collection("reservations");
     private EventAdapter adapter;
     private RecyclerView recyclerView;
 
@@ -87,6 +91,11 @@ public class AdminActivity extends AppCompatActivity {
                         startActivity(new Intent(AdminActivity.this, MainActivity.class));
                         finish();
                     }
+                } else {
+                    // No user document found —> deny access
+                    auth.signOut();
+                    startActivity(new Intent(AdminActivity.this, LogInActivity.class));
+                    finish();
                 }
             }
         });
@@ -114,17 +123,39 @@ public class AdminActivity extends AppCompatActivity {
         showEventDialog(null);
     }
 
-    public void deleteEvent(Event event) {
+    public void cancelEvent(Event event) {
         new MaterialAlertDialogBuilder(this)
                 .setTitle("Cancel Event")
-                .setMessage("Are you sure you want to delete this event?")
-                .setPositiveButton("Yes, Delete", (dialog, which) -> {
-                    eventsRef.document(event.getId()).delete()
-                            .addOnSuccessListener(aVoid ->
-                                    Toast.makeText(this, "Event Removed!", Toast.LENGTH_SHORT).show());
+                .setMessage("Are you sure you want to cancel this event?")
+                .setPositiveButton("Yes, Cancel", (dialog, which) -> {
+                    DocumentReference eventDoc = eventsRef.document(event.getId());
+
+                    eventDoc.update("status", "cancelled")
+                            .addOnSuccessListener(aVoid -> {
+                                Toast.makeText(this, "Event Cancelled!", Toast.LENGTH_SHORT).show();
+                                cancelRelatedReservations(event);
+                            });
                 })
                 .setNegativeButton("No", null)
                 .show();
+    }
+
+    private void cancelRelatedReservations(Event event) {
+        reservationsRef.whereEqualTo("eventId", event.getId())
+                .whereEqualTo("status", "confirmed")
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    if (queryDocumentSnapshots.isEmpty()) return;
+
+                    WriteBatch batch = db.batch();
+                    for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
+                        batch.update(doc.getReference(),
+                                "status", "cancelled",
+                                "cancelledAt", FieldValue.serverTimestamp());
+                    }
+
+                    batch.commit();
+                });
     }
 
     public void editEvent(Event event) {
@@ -156,10 +187,9 @@ public class AdminActivity extends AppCompatActivity {
             etLocation.setText(event.getLocation());
             etCategory.setText(event.getCategory());
             etMax.setText(String.valueOf(event.getMaxPlaces()));
-            if (event.getDate() != null) {
-                calendar.setTime(event.getDate().toDate());
-                updateDateButtonText(btnPickDate, calendar);
-            }
+            calendar.setTime(event.getDate().toDate());
+            updateDateButtonText(btnPickDate, calendar);
+
         }
 
         btnPickDate.setOnClickListener(v -> showDateTimePicker(calendar, btnPickDate));
@@ -176,6 +206,16 @@ public class AdminActivity extends AppCompatActivity {
             }
 
             int maxPlaces = Integer.parseInt(maxStr);
+            if (maxPlaces <= 0) {
+                Toast.makeText(this, "Max places must be greater than 0", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            if (isEdit && maxPlaces < event.getReservedPlaces()) {
+                Toast.makeText(this, "Max places cannot be less than reserved places", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
             Timestamp date = new Timestamp(calendar.getTime());
 
             // normalize for filtering
@@ -193,12 +233,14 @@ public class AdminActivity extends AppCompatActivity {
 
             if (isEdit) { // Update existing document
                 data.put("reservedPlaces", event.getReservedPlaces());
+                data.put("status", event.getStatus());
                 eventsRef.document(event.getId()).set(data).addOnSuccessListener(aVoid -> {
                     Toast.makeText(this, "Event Updated!", Toast.LENGTH_SHORT).show();
                     dialog.dismiss();
                 });
             } else { // Create brand new document
                 data.put("reservedPlaces", 0);
+                data.put("status", "active");
                 eventsRef.add(data).addOnSuccessListener(ref -> {
                     Toast.makeText(this, "Event Added!", Toast.LENGTH_SHORT).show();
                     dialog.dismiss();
@@ -240,5 +282,13 @@ public class AdminActivity extends AppCompatActivity {
     }
     protected void setEventsRef(CollectionReference ref) {
         this.eventsRef = ref;
+    }
+
+    protected void setReservationsRef(CollectionReference ref) {
+        this.reservationsRef = ref;
+    }
+
+    protected void setDb(FirebaseFirestore db) {
+        this.db = db;
     }
 }

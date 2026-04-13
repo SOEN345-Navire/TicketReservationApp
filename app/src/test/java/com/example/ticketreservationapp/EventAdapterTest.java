@@ -8,6 +8,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.view.ContextThemeWrapper;
 import android.view.LayoutInflater;
@@ -43,7 +44,7 @@ public class EventAdapterTest {
 
     public static class FakeAdminActivity extends AdminActivity {
         boolean editCalled;
-        boolean deleteCalled;
+        boolean cancelCalled;
 
         @Override
         protected void onCreate(Bundle savedInstanceState) {}
@@ -54,8 +55,8 @@ public class EventAdapterTest {
         }
 
         @Override
-        public void deleteEvent(Event event) {
-            deleteCalled = true;
+        public void cancelEvent(Event event) {
+            cancelCalled = true;
         }
     }
 
@@ -99,6 +100,7 @@ public class EventAdapterTest {
         event.setDate(new Timestamp(new Date()));
         event.setReservedPlaces(reserved);
         event.setMaxPlaces(max);
+        event.setStatus("active");
         return event;
     }
 
@@ -227,7 +229,7 @@ public class EventAdapterTest {
         itemView.findViewById(R.id.btnCancel).performClick();
 
         assertTrue(activity.editCalled);
-        assertTrue(activity.deleteCalled);
+        assertTrue(activity.cancelCalled);
     }
     @Test
     public void onDataChanged_notifiesEmptyStateListener_whenItsEmpty() {
@@ -242,5 +244,29 @@ public class EventAdapterTest {
         adapter.onDataChanged();
 
         assertEquals(Boolean.TRUE, empty.get());
+    }
+
+    @Test
+    public void bind_cancelledEvent_showsCancelledStatusAndDisablesActions() {
+        EventAdapter adapter = new EventAdapter(mockOptions(), (event, quantity) -> {});
+        View itemView = inflateEventItemView();
+        EventAdapter.EventHolder holder = adapter.new EventHolder(itemView);
+        Event event = createEvent(0, 10);
+        event.setStatus("cancelled");
+
+        holder.bind(event);
+
+        TextView tvStatus = itemView.findViewById(R.id.tvStatus);
+        TextView tvAvailability = itemView.findViewById(R.id.tvAvailabilityStatus);
+        MaterialButton btnReserve = itemView.findViewById(R.id.btnReserve);
+
+        assertEquals(View.VISIBLE, tvStatus.getVisibility());
+        assertEquals("CANCELLED", tvStatus.getText().toString());
+        assertEquals(Color.parseColor("#C62828"), tvStatus.getCurrentTextColor());
+
+        assertEquals("Event Cancelled", tvAvailability.getText().toString());
+        assertEquals(Color.parseColor("#C62828"), tvAvailability.getCurrentTextColor());
+
+        assertFalse(btnReserve.isEnabled());
     }
 }

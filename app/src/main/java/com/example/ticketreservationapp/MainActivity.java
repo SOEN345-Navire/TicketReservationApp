@@ -35,6 +35,7 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String FULL_EVENT_MESSAGE = "Event is full, no tickets are available";
     private static final String NOT_ENOUGH_TICKETS_MESSAGE = "Not enough tickets available for selected quantity";
+    private static final String EVENT_CANCELLED_MESSAGE = "This event has been cancelled and cannot be booked";
     private static final String STATUS_CONFIRMED = "confirmed";
     private static final String STATUS_CANCELLED = "cancelled";
 
@@ -358,6 +359,11 @@ public class MainActivity extends AppCompatActivity {
             DocumentReference eventRef = eventsRef.document(event.getId());
             DocumentSnapshot snapshot = transaction.get(eventRef);
 
+            String status = snapshot.getString("status");
+            if ("cancelled".equalsIgnoreCase(status)) {
+                throw new IllegalStateException(EVENT_CANCELLED_MESSAGE);
+            }
+
             int reservedPlaces = snapshot.getLong("reservedPlaces").intValue();
             int maxPlaces = snapshot.getLong("maxPlaces").intValue();
 
@@ -395,10 +401,8 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(this, ticketCount + " ticket(s) booked! Reservation confirmed.", Toast.LENGTH_SHORT).show();
         }
         ).addOnFailureListener(e -> {
-            String message = FULL_EVENT_MESSAGE;
-            if (NOT_ENOUGH_TICKETS_MESSAGE.equals(e.getMessage())) {
-                message = NOT_ENOUGH_TICKETS_MESSAGE;
-            } else if (!FULL_EVENT_MESSAGE.equals(e.getMessage())) {
+            String message = e.getMessage();
+            if (message == null || (!EVENT_CANCELLED_MESSAGE.equals(message) && !NOT_ENOUGH_TICKETS_MESSAGE.equals(message) && !FULL_EVENT_MESSAGE.equals(message))) {
                 message = "Unable to book ticket right now. Please try again.";
             }
             Toast.makeText(this, message, Toast.LENGTH_LONG).show();

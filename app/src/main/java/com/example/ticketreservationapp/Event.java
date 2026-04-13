@@ -10,18 +10,20 @@ public class Event {
     private String category;
     private int reservedPlaces;
     private int maxPlaces;
+    private String status;
 
     public Event() {
 
     }
 
-    public Event(String name, Timestamp date, String location, String category, int reservedPlaces, int maxPlaces) {
+    public Event(String name, Timestamp date, String location, String category, int reservedPlaces, int maxPlaces, String status) {
         this.name = name;
         this.date = date;
         this.location = location;
         this.category = category;
         this.reservedPlaces = reservedPlaces;
         this.maxPlaces = maxPlaces;
+        this.status = status;
     }
 
     public String getName() {
@@ -78,5 +80,13 @@ public class Event {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 }

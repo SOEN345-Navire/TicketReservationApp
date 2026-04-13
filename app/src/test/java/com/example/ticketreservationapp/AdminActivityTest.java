@@ -3,13 +3,13 @@ package com.example.ticketreservationapp;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import androidx.appcompat.app.AlertDialog;
 import android.app.DatePickerDialog;
 import android.app.Dialog;
 import android.app.TimePickerDialog;
@@ -17,6 +17,8 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.widget.Button;
+
+import androidx.appcompat.app.AlertDialog;
 
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
@@ -30,6 +32,10 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
+import com.google.firebase.firestore.QuerySnapshot;
+import com.google.firebase.firestore.WriteBatch;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -44,11 +50,11 @@ import org.robolectric.RuntimeEnvironment;
 import org.robolectric.Shadows;
 import org.robolectric.android.controller.ActivityController;
 import org.robolectric.annotation.Config;
-import org.robolectric.shadows.ShadowAlertDialog;
 import org.robolectric.shadows.ShadowDialog;
 import org.robolectric.shadows.ShadowLooper;
 import org.robolectric.shadows.ShadowToast;
 
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Map;
 import java.util.Objects;
@@ -74,30 +80,57 @@ public class AdminActivityTest {
     }
 
     private Event createEvent() {
-        Event event = new Event("Concert", new Timestamp(new Date()), "MTL", "CONCERT", 2, 10);
+        Event event = new Event("Concert", new Timestamp(new Date()), "MTL", "CONCERT", 2, 10, "Active");
         event.setId("event-id");
         return event;
     }
 
     @Test
-    public void deleteEvent_removesDocumentFromFirestore() {
+    public void cancelEvent_andCancelReservations() {
         Event event = createEvent();
+
         try (ActivityController<AdminActivity> controller = Robolectric.buildActivity(AdminActivity.class).create()) {
             AdminActivity activity = controller.get();
 
-            CollectionReference mockRef = mock(CollectionReference.class);
-            DocumentReference mockDocRef = mock(DocumentReference.class);
-            when(mockRef.document(event.getId())).thenReturn(mockDocRef);
-            when(mockDocRef.delete()).thenReturn(Tasks.forResult(null));
-            activity.setEventsRef(mockRef);
+            // Mock events collection
+            CollectionReference mockEventsRef = mock(CollectionReference.class);
+            DocumentReference mockEventDocRef = mock(DocumentReference.class);
+            when(mockEventsRef.document(event.getId())).thenReturn(mockEventDocRef);
+            when(mockEventDocRef.update("status", "cancelled")).thenReturn(Tasks.forResult(null));
+            activity.setEventsRef(mockEventsRef);
 
-            activity.deleteEvent(event);
-            AlertDialog confirmDialog = (AlertDialog) ShadowAlertDialog.getLatestDialog();
-            confirmDialog.getButton(DialogInterface.BUTTON_POSITIVE).performClick();
+            // Mock reservations query returning two confirmed reservations
+            DocumentReference mockResRef1 = mock(DocumentReference.class);
+            DocumentReference mockResRef2 = mock(DocumentReference.class);
+            DocumentSnapshot mockResDoc1 = mock(DocumentSnapshot.class);
+            DocumentSnapshot mockResDoc2 = mock(DocumentSnapshot.class);
+            when(mockResDoc1.getReference()).thenReturn(mockResRef1);
+            when(mockResDoc2.getReference()).thenReturn(mockResRef2);
+
+            QuerySnapshot mockSnapshot = mock(QuerySnapshot.class);
+            when(mockSnapshot.isEmpty()).thenReturn(false);
+            when(mockSnapshot.getDocuments()).thenReturn(Arrays.asList(mockResDoc1, mockResDoc2));
+
+            Query mockQueryByEvent = mock(Query.class);
+            Query mockQueryByStatus = mock(Query.class);
+            CollectionReference mockReservationsRef = mock(CollectionReference.class);
+            when(mockReservationsRef.whereEqualTo("eventId", event.getId())).thenReturn(mockQueryByEvent);
+            when(mockQueryByEvent.whereEqualTo("status", "confirmed")).thenReturn(mockQueryByStatus);
+            when(mockQueryByStatus.get()).thenReturn(Tasks.forResult(mockSnapshot));
+            activity.setReservationsRef(mockReservationsRef);
+
+            WriteBatch mockBatch = mock(WriteBatch.class);
+            FirebaseFirestore mockDb = mock(FirebaseFirestore.class);
+            when(mockDb.batch()).thenReturn(mockBatch);
+            activity.setDb(mockDb);
+
+            activity.cancelEvent(event);
+            ((AlertDialog) ShadowDialog.getLatestDialog()).getButton(DialogInterface.BUTTON_POSITIVE).performClick();
             ShadowLooper.idleMainLooper();
 
-            verify(mockRef).document(event.getId());
-            verify(mockDocRef, times(1)).delete();
+            verify(mockBatch).update(eq(mockResRef1), eq("status"), eq("cancelled"), eq("cancelledAt"), any());
+            verify(mockBatch).update(eq(mockResRef2), eq("status"), eq("cancelled"), eq("cancelledAt"), any());
+            verify(mockBatch).commit();
         }
     }
 
@@ -191,6 +224,44 @@ public class AdminActivityTest {
     }
 
     @Test
+    public void saveEvent_withZeroMaxPlaces() {
+        try (ActivityController<AdminActivity> controller = Robolectric.buildActivity(AdminActivity.class).create()) {
+            AdminActivity activity = controller.get();
+            activity.findViewById(R.id.btnAdd).performClick();
+            Dialog dialog = ShadowDialog.getLatestDialog();
+
+            dialog.<TextInputEditText>findViewById(R.id.etName).setText("Rock Concert");
+            dialog.<TextInputEditText>findViewById(R.id.etLocation).setText("MTL");
+            dialog.<TextInputEditText>findViewById(R.id.etCategory).setText("Concert");
+            dialog.<TextInputEditText>findViewById(R.id.etMaxPlaces).setText("0");
+            dialog.findViewById(R.id.btnSaveEvent).performClick();
+
+            assertEquals("Max places must be greater than 0", ShadowToast.getTextOfLatestToast());
+        }
+    }
+
+    @Test
+    public void saveEvent_withMaxPlacesLessThanReserved() {
+        Event event = createEvent(); // Has 2 reserved places
+        try (ActivityController<AdminActivity> controller = Robolectric.buildActivity(AdminActivity.class).create()) {
+            AdminActivity activity = controller.get();
+
+            CollectionReference mockRef = mock(CollectionReference.class);
+            activity.setEventsRef(mockRef);
+
+            activity.editEvent(event);
+            Dialog dialog = ShadowDialog.getLatestDialog();
+
+            TextInputEditText etMax = dialog.findViewById(R.id.etMaxPlaces);
+            etMax.setText("1");
+
+            dialog.findViewById(R.id.btnSaveEvent).performClick();
+
+            assertEquals("Max places cannot be less than reserved places", ShadowToast.getTextOfLatestToast());
+        }
+    }
+
+    @Test
     public void whenLoggedOut_redirectsToLogin() {
         try (ActivityController<AdminActivity> controller = Robolectric.buildActivity(AdminActivity.class).create()) {
             AdminActivity activity = controller.get();
@@ -260,9 +331,11 @@ public class AdminActivityTest {
         try (ActivityController<AdminActivity> controller = Robolectric.buildActivity(AdminActivity.class).create()) {
             AdminActivity activity = controller.get();
 
+            // Mock a Phone Admin User (email is null)
             FirebaseUser mockUser = mock(FirebaseUser.class);
             when(mockUser.getUid()).thenReturn("admin-id");
-            when(mockUser.isEmailVerified()).thenReturn(true);
+            when(mockUser.isEmailVerified()).thenReturn(false);
+            when(mockUser.getEmail()).thenReturn(null);
 
             DocumentSnapshot mockDocument = mock(DocumentSnapshot.class);
             when(mockDocument.exists()).thenReturn(true);
@@ -281,6 +354,40 @@ public class AdminActivityTest {
                 ShadowLooper.idleMainLooper();
 
                 assertFalse(activity.isFinishing());
+            }
+        }
+    }
+
+    @Test
+    public void whenDocumentDoesNotExist_redirectsToLogInActivity() {
+        try (ActivityController<AdminActivity> controller = Robolectric.buildActivity(AdminActivity.class).create()) {
+            AdminActivity activity = controller.get();
+
+            FirebaseUser mockUser = mock(FirebaseUser.class);
+            when(mockUser.getUid()).thenReturn("user-id");
+            when(mockUser.isEmailVerified()).thenReturn(true);
+            when(mockUser.getEmail()).thenReturn("test@gmail.com");
+
+            FirebaseAuth mockAuth = mock(FirebaseAuth.class);
+            when(mockAuth.getCurrentUser()).thenReturn(mockUser);
+
+            activity.auth = mockAuth;
+
+            DocumentSnapshot mockDocument = mock(DocumentSnapshot.class);
+            when(mockDocument.exists()).thenReturn(false);
+            Task<DocumentSnapshot> completedTask = Tasks.forResult(mockDocument);
+
+            try (MockedStatic<Authentification> mockedAuth = mockStatic(Authentification.class)) {
+                mockedAuth.when(() -> Authentification.isAdmin("user-id")).thenReturn(completedTask);
+
+                activity.authStateListener.onAuthStateChanged(mockAuth);
+
+                ShadowLooper.idleMainLooper();
+
+                verify(mockAuth).signOut();
+
+                Intent intent = Shadows.shadowOf(activity).getNextStartedActivity();
+                assertEquals(LogInActivity.class.getName(), Objects.requireNonNull(intent.getComponent()).getClassName());
             }
         }
     }
