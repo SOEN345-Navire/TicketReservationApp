@@ -14,12 +14,15 @@ import com.google.firebase.auth.FirebaseUser;
 
 
 public class ConfirmEmailActivity extends AppCompatActivity {
+    Button confirmButton;
+    FirebaseAuth auth;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_confirm_email);
-        FirebaseAuth auth = FirebaseAuth.getInstance();
+        auth = FirebaseAuth.getInstance();
         FirebaseUser user = auth.getCurrentUser();
         if (user == null) {
             startActivity(new Intent(ConfirmEmailActivity.this, LogInActivity.class));
@@ -27,25 +30,27 @@ public class ConfirmEmailActivity extends AppCompatActivity {
             return;
         }
         user.sendEmailVerification();
-        Button confirmButton = findViewById(R.id.confirm_button);
+        confirmButton = findViewById(R.id.confirm_button);
         confirmButton.setOnClickListener(v -> checkEmailVerification(user));
 
     }
 
     private void checkEmailVerification(FirebaseUser user) {
         Task<Void> reload = user.reload();
-        reload.addOnCompleteListener(this, task -> {
-            if (task.isSuccessful()) {
-                if (user.isEmailVerified()) {
-                    startActivity(new Intent(ConfirmEmailActivity.this, MainActivity.class));
-                    finish();
-                } else {
-                    Toast.makeText(this, "Please verify your email", Toast.LENGTH_LONG).show();
-                }
-            }else{
-                Toast.makeText(this, "Failed to reload user", Toast.LENGTH_LONG).show();
+        reload.addOnCompleteListener(this, this::handleEmailVerificationResult);
+    }
+
+    void handleEmailVerificationResult(Task<Void> task) {
+        if (task.isSuccessful()) {
+            if (auth.getCurrentUser() != null && auth.getCurrentUser().isEmailVerified()) {
+                startActivity(new Intent(ConfirmEmailActivity.this, MainActivity.class));
+                finish();
+            } else {
+                Toast.makeText(this, "Please verify your email", Toast.LENGTH_LONG).show();
             }
-        });
+        }else{
+            Toast.makeText(this, "Failed to reload user", Toast.LENGTH_LONG).show();
+        }
     }
 
 }

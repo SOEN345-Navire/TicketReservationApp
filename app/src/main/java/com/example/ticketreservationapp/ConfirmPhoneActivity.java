@@ -9,7 +9,9 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseException;
+import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 
 import com.google.firebase.auth.PhoneAuthCredential;
@@ -20,9 +22,9 @@ import com.google.firebase.auth.PhoneAuthProvider;
 
 public class ConfirmPhoneActivity extends AppCompatActivity {
 
-    private FirebaseAuth auth;
+    FirebaseAuth auth;
 
-    private String verificationId;
+    String verificationId;
 
     PhoneAuthProvider.ForceResendingToken token;
 
@@ -62,7 +64,7 @@ public class ConfirmPhoneActivity extends AppCompatActivity {
 
     }
 
-    private PhoneAuthOptions getOptions(String phoneString) {
+    PhoneAuthOptions getOptions(String phoneString) {
         return new PhoneAuthOptions.Builder(auth)
                 .setPhoneNumber(phoneString)
                 .setTimeout(60L, java.util.concurrent.TimeUnit.SECONDS)
@@ -71,7 +73,7 @@ public class ConfirmPhoneActivity extends AppCompatActivity {
                 .build();
     }
 
-    private PhoneAuthProvider.OnVerificationStateChangedCallbacks getCallbacks() {
+    PhoneAuthProvider.OnVerificationStateChangedCallbacks getCallbacks() {
         return new PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
             @Override
             public void onVerificationCompleted(@NonNull PhoneAuthCredential credential) {
@@ -93,18 +95,19 @@ public class ConfirmPhoneActivity extends AppCompatActivity {
         };
     }
     void signInWithPhoneAuthCredential(PhoneAuthCredential credential) {
-        auth.signInWithCredential(credential)
-            .addOnCompleteListener(this, task1 -> {
-                if (task1.isSuccessful()) {
-                    Toast.makeText(ConfirmPhoneActivity.this, "Login successful", Toast.LENGTH_LONG).show();
-                    startActivity(new Intent(ConfirmPhoneActivity.this, MainActivity.class));
-                    finish();
-                } else {
-                    Toast.makeText(ConfirmPhoneActivity.this, "Login failed", Toast.LENGTH_LONG).show();
-                    startActivity(new Intent(ConfirmPhoneActivity.this, LogInActivity.class));
-                    finish();
-                }
-            });
+        auth.signInWithCredential(credential).addOnCompleteListener(this, this::handleLoginResult);
+    }
+
+    void handleLoginResult(Task<AuthResult> task) {
+        if (task.isSuccessful()) {
+            Toast.makeText(ConfirmPhoneActivity.this, "Login successful", Toast.LENGTH_LONG).show();
+            startActivity(new Intent(ConfirmPhoneActivity.this, MainActivity.class));
+            finish();
+        } else {
+            Toast.makeText(ConfirmPhoneActivity.this, "Login failed", Toast.LENGTH_LONG).show();
+            startActivity(new Intent(ConfirmPhoneActivity.this, LogInActivity.class));
+            finish();
+        }
     }
 }
 

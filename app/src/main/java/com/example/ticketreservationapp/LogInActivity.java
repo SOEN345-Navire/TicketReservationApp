@@ -10,15 +10,23 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.PhoneAuthProvider;
 
 
 public class LogInActivity extends AppCompatActivity {
 
-    private EditText email, password, phone;
+    EditText email;
+    EditText password;
+    EditText phone;
 
-    private FirebaseAuth auth;
+    Button logMail, logPhone;
+
+    TextView registerLink;
+
+    FirebaseAuth auth;
 
     private PhoneAuthProvider.OnVerificationStateChangedCallbacks callbacks;
 
@@ -36,16 +44,16 @@ public class LogInActivity extends AppCompatActivity {
         password = findViewById(R.id.password_edittext);
         phone = findViewById(R.id.phone_edittext);
 
-        TextView registerLink = findViewById(R.id.register_link);
+        registerLink = findViewById(R.id.register_link);
         registerLink.setOnClickListener(v -> {
             startActivity(new Intent(LogInActivity.this, RegisterActivity.class));
             finish();
         });
 
 
-        Button logMail = findViewById(R.id.loginMail_button);
+        logMail = findViewById(R.id.loginMail_button);
         logMail.setOnClickListener(v -> logInWithEmail(email.getText().toString().trim(), password.getText().toString().trim()));
-        Button logPhone = findViewById(R.id.loginPhone_button);
+        logPhone = findViewById(R.id.loginPhone_button);
         logPhone.setOnClickListener(v -> logInWithPhone(phone.getText().toString().trim()));
     }
 
@@ -56,18 +64,7 @@ public class LogInActivity extends AppCompatActivity {
             return;
         }
 
-        auth.signInWithEmailAndPassword(mailString, pass).addOnCompleteListener(this, task -> {
-            if (task.isSuccessful()) {
-                Toast.makeText(LogInActivity.this, "Login successful!", Toast.LENGTH_LONG).show();
-                // Navigate to MainActivity
-                startActivity(new Intent(LogInActivity.this, MainActivity.class));
-                finish();
-            } else {
-                // Login failed
-                Toast.makeText(LogInActivity.this, "Login failed! Please try again later", Toast.LENGTH_LONG).show();
-
-            }
-        });
+        auth.signInWithEmailAndPassword(mailString, pass).addOnCompleteListener(this, this::handleLoginResult);
     }
 
     void logInWithPhone(String phoneString) {
@@ -84,6 +81,19 @@ public class LogInActivity extends AppCompatActivity {
         Authentification.phone = "+1" + phoneString;
         startActivity(new Intent(LogInActivity.this, ConfirmPhoneActivity.class));
         finish();
+    }
+
+    void handleLoginResult(Task<AuthResult> task) {
+        if (task.isSuccessful()) {
+            Toast.makeText(LogInActivity.this, "Login successful!", Toast.LENGTH_LONG).show();
+            // Navigate to MainActivity
+            startActivity(new Intent(LogInActivity.this, MainActivity.class));
+            finish();
+        } else {
+            // Login failed
+            Toast.makeText(LogInActivity.this, "Login failed! Please try again later", Toast.LENGTH_LONG).show();
+
+        }
     }
 
 }
