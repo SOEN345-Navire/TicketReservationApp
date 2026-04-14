@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ReservationAdapter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.ticketreservationapp</a> &gt; <span class="el_source">ReservationAdapter.java</span></div><h1>ReservationAdapter.java</h1><pre class="source lang-java linenums">package com.example.ticketreservationapp;
+
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.TextView;
+
+import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.firebase.ui.firestore.FirestoreRecyclerAdapter;
+import com.firebase.ui.firestore.FirestoreRecyclerOptions;
+import com.google.android.material.button.MaterialButton;
+
+import java.text.SimpleDateFormat;
+import java.util.Locale;
+
+public class ReservationAdapter extends FirestoreRecyclerAdapter&lt;Reservation, ReservationAdapter.ReservationHolder&gt; {
+
+    public interface EmptyStateListener {
+        void onEmptyStateChanged(boolean isEmpty);
+    }
+
+    public interface ReservationActionListener {
+        void onCancel(Reservation reservation);
+    }
+
+    private final EmptyStateListener emptyStateListener;
+    private final ReservationActionListener actionListener;
+
+    public ReservationAdapter(@NonNull FirestoreRecyclerOptions&lt;Reservation&gt; options,
+                              EmptyStateListener emptyStateListener,
+                              ReservationActionListener actionListener) {
+<span class="fc" id="L34">        super(options);</span>
+<span class="fc" id="L35">        this.emptyStateListener = emptyStateListener;</span>
+<span class="fc" id="L36">        this.actionListener = actionListener;</span>
+<span class="fc" id="L37">    }</span>
+
+    @Override
+    protected void onBindViewHolder(@NonNull ReservationHolder holder, int position, @NonNull Reservation model) {
+<span class="fc" id="L41">        String docId = getSnapshots().getSnapshot(position).getId();</span>
+<span class="fc" id="L42">        model.setId(docId);</span>
+<span class="fc" id="L43">        holder.bind(model);</span>
+<span class="fc" id="L44">    }</span>
+
+    @NonNull
+    @Override
+    public ReservationHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+<span class="fc" id="L49">        View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_reservation, parent, false);</span>
+<span class="fc" id="L50">        return new ReservationHolder(v);</span>
+    }
+
+    @Override
+    public void onDataChanged() {
+<span class="fc bfc" id="L55" title="All 2 branches covered.">        if (emptyStateListener != null) {</span>
+<span class="pc bpc" id="L56" title="1 of 2 branches missed.">            emptyStateListener.onEmptyStateChanged(getItemCount() == 0);</span>
+        }
+<span class="fc" id="L58">    }</span>
+
+    class ReservationHolder extends RecyclerView.ViewHolder {
+        private final TextView tvEventName;
+        private final TextView tvCategory;
+        private final TextView tvLocation;
+        private final TextView tvEventDate;
+        private final TextView tvTicketCount;
+        private final TextView tvStatus;
+        private final MaterialButton btnCancelReservation;
+
+<span class="fc" id="L69">        private final SimpleDateFormat dateFormat = new SimpleDateFormat(&quot;MMM dd, yyyy • hh:mm a&quot;, Locale.getDefault());</span>
+
+<span class="fc" id="L71">        ReservationHolder(View itemView) {</span>
+<span class="fc" id="L72">            super(itemView);</span>
+<span class="fc" id="L73">            tvEventName = itemView.findViewById(R.id.tvReservationEventName);</span>
+<span class="fc" id="L74">            tvCategory = itemView.findViewById(R.id.tvReservationCategory);</span>
+<span class="fc" id="L75">            tvLocation = itemView.findViewById(R.id.tvReservationLocation);</span>
+<span class="fc" id="L76">            tvEventDate = itemView.findViewById(R.id.tvReservationEventDate);</span>
+<span class="fc" id="L77">            tvTicketCount = itemView.findViewById(R.id.tvReservationTicketCount);</span>
+<span class="fc" id="L78">            tvStatus = itemView.findViewById(R.id.tvReservationStatus);</span>
+<span class="fc" id="L79">            btnCancelReservation = itemView.findViewById(R.id.btnCancelReservation);</span>
+<span class="fc" id="L80">        }</span>
+
+        void bind(Reservation model) {
+<span class="fc" id="L83">            tvEventName.setText(model.getEventName());</span>
+<span class="fc" id="L84">            tvCategory.setText(model.getEventCategory());</span>
+<span class="fc" id="L85">            tvLocation.setText(model.getEventLocation());</span>
+<span class="fc" id="L86">            tvEventDate.setText(dateFormat.format(model.getEventDate().toDate()));</span>
+<span class="fc" id="L87">            tvTicketCount.setText(itemView.getContext().getString(R.string.tickets_count, model.getTicketCount()));</span>
+
+<span class="fc" id="L89">            String status = model.getStatus();</span>
+<span class="fc" id="L90">            boolean isCancelled = &quot;cancelled&quot;.equalsIgnoreCase(status);</span>
+
+<span class="fc bfc" id="L92" title="All 2 branches covered.">            if (isCancelled) {</span>
+<span class="fc" id="L93">                tvStatus.setText(itemView.getContext().getString(R.string.status_cancelled));</span>
+<span class="fc" id="L94">                tvStatus.setTextColor(0xFFC62828);</span>
+<span class="fc" id="L95">                btnCancelReservation.setEnabled(false);</span>
+<span class="fc" id="L96">                btnCancelReservation.setText(itemView.getContext().getString(R.string.reservation_cancelled));</span>
+<span class="fc" id="L97">                btnCancelReservation.setAlpha(0.6f);</span>
+            } else {
+<span class="fc" id="L99">                tvStatus.setText(itemView.getContext().getString(R.string.status_confirmed));</span>
+<span class="fc" id="L100">                tvStatus.setTextColor(0xFF2E7D32);</span>
+<span class="fc" id="L101">                btnCancelReservation.setEnabled(true);</span>
+<span class="fc" id="L102">                btnCancelReservation.setText(itemView.getContext().getString(R.string.cancel_reservation));</span>
+<span class="fc" id="L103">                btnCancelReservation.setAlpha(1f);</span>
+            }
+
+<span class="fc" id="L106">            btnCancelReservation.setOnClickListener(v -&gt; {</span>
+<span class="fc bfc" id="L107" title="All 2 branches covered.">                if (!isCancelled) {</span>
+<span class="fc" id="L108">                    actionListener.onCancel(model);</span>
+                }
+<span class="fc" id="L110">            });</span>
+<span class="fc" id="L111">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span>Generated by the Android Gradle plugin 9.0.1</div></body></html>
