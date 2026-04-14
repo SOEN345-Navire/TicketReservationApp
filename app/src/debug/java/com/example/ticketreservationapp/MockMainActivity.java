@@ -35,8 +35,12 @@ public class MockMainActivity extends AppCompatActivity {
     private static final String AVAILABLE_EVENT_MESSAGE = "Tickets available";
     private static final String EVENT_CANCELLED_MESSAGE = "Event Cancelled";
     private static final String STATUS_CONFIRMED = "confirmed";
+    private static final String STATUS_CANCELLED = "cancelled";
     private static final String MOCK_USER_ID = "mock-user";
     private static final List<Event> SEEDED_EVENTS = createSeededEvents();
+    private static boolean sessionInitialized = false;
+    private static List<Event> sessionEvents;
+    private static List<Reservation> sessionReservations;
 
     private MaterialToolbar toolbar;
     private RecyclerView rvEvents;
@@ -48,7 +52,9 @@ public class MockMainActivity extends AppCompatActivity {
     private SeededReservationAdapter reservationAdapter;
     private List<Event> allEvents;
     private EventFilter activeFilter = EventFilter.none();
-    private final List<Reservation> localReservations = new ArrayList<>();
+    private List<Reservation> allReservations;
+    private final List<Reservation> visibleReservations = new ArrayList<>();
+    private int selectedReservationsTab = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -90,18 +96,37 @@ public class MockMainActivity extends AppCompatActivity {
         });
         bottomNav.setSelectedItemId(R.id.nav_events);
 
-        allEvents = copyEvents(SEEDED_EVENTS);
+        initSessionStateIfNeeded();
+        allEvents = sessionEvents;
+        allReservations = sessionReservations;
+
         rvEvents.setLayoutManager(new LinearLayoutManager(this));
         eventAdapter = new SeededEventAdapter(new ArrayList<>(allEvents), this::bookEvent);
         rvEvents.setAdapter(eventAdapter);
         rvEvents.setHasFixedSize(true);
 
         rvReservations.setLayoutManager(new LinearLayoutManager(this));
-        reservationAdapter = new SeededReservationAdapter(localReservations);
+        reservationAdapter = new SeededReservationAdapter(visibleReservations, this::cancelReservation);
         rvReservations.setAdapter(reservationAdapter);
         rvReservations.setHasFixedSize(true);
 
+        initReservationsTabs();
+
         showEventsTab();
+    }
+
+    private void initSessionStateIfNeeded() {
+        if (sessionInitialized) {
+            return;
+        }
+
+        allEvents = copyEvents(SEEDED_EVENTS);
+        allReservations = new ArrayList<>();
+        seedReservations();
+
+        sessionEvents = allEvents;
+        sessionReservations = allReservations;
+        sessionInitialized = true;
     }
 
     public static List<Event> getSeededEvents() {
@@ -128,7 +153,7 @@ public class MockMainActivity extends AppCompatActivity {
 
     private void bookEvent(Event event, int ticketCount) {
         Reservation reservation = new Reservation(
-                "reservation-" + (localReservations.size() + 1),
+                "reservation-" + (allReservations.size() + 1),
                 MOCK_USER_ID,
                 event.getId(),
                 event.getName(),
@@ -139,8 +164,14 @@ public class MockMainActivity extends AppCompatActivity {
                 ticketCount
         );
 
-        localReservations.add(0, reservation);
-        reservationAdapter.notifyItemInserted(0);
+        allReservations.add(0, reservation);
+        refreshVisibleReservations();
+        updateReservationsEmptyState();
+    }
+
+    private void cancelReservation(Reservation reservation) {
+        reservation.setStatus(STATUS_CANCELLED);
+        refreshVisibleReservations();
         updateReservationsEmptyState();
     }
 
@@ -156,16 +187,95 @@ public class MockMainActivity extends AppCompatActivity {
     private void showReservationsTab() {
         rvEvents.setVisibility(View.GONE);
         rvReservations.setVisibility(View.VISIBLE);
-        tabsReservations.setVisibility(View.GONE);
+        tabsReservations.setVisibility(View.VISIBLE);
         tvNoMatchingResultsFromFilter.setVisibility(View.GONE);
         toolbar.setTitle(getString(R.string.my_reservations));
+
+        TabLayout.Tab selectedTab = tabsReservations.getTabAt(selectedReservationsTab);
+        if (selectedTab != null) {
+            selectedTab.select();
+        }
+
+        refreshVisibleReservations();
         updateReservationsEmptyState();
     }
 
     private void updateReservationsEmptyState() {
         boolean isReservationsVisible = rvReservations.getVisibility() == View.VISIBLE;
-        boolean isEmpty = localReservations.isEmpty();
+        boolean isEmpty = visibleReservations.isEmpty();
         tvEmptyReservations.setVisibility(isReservationsVisible && isEmpty ? View.VISIBLE : View.GONE);
+    }
+
+    private void initReservationsTabs() {
+        if (tabsReservations.getTabCount() == 0) {
+            tabsReservations.addTab(tabsReservations.newTab().setText(R.string.reservations_tab_active));
+            tabsReservations.addTab(tabsReservations.newTab().setText(R.string.reservations_tab_past));
+        }
+
+        tabsReservations.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+            @Override
+            public void onTabSelected(TabLayout.Tab tab) {
+                selectedReservationsTab = tab.getPosition();
+                refreshVisibleReservations();
+                updateReservationsEmptyState();
+            }
+
+            @Override
+            public void onTabUnselected(TabLayout.Tab tab) {
+            }
+
+            @Override
+            public void onTabReselected(TabLayout.Tab tab) {
+            }
+        });
+    }
+
+    private void refreshVisibleReservations() {
+        visibleReservations.clear();
+
+        String expectedStatus = selectedReservationsTab == 0 ? STATUS_CONFIRMED : STATUS_CANCELLED;
+        for (Reservation reservation : allReservations) {
+            if (expectedStatus.equalsIgnoreCase(reservation.getStatus())) {
+                visibleReservations.add(reservation);
+            }
+        }
+
+        if (reservationAdapter != null) {
+            reservationAdapter.notifyDataSetChanged();
+        }
+    }
+
+    private void seedReservations() {
+        allReservations.clear();
+
+        Event activeEvent = allEvents.get(0);
+        Event cancelledEvent = allEvents.get(1);
+
+        allReservations.add(new Reservation(
+                "reservation-seeded-1",
+                MOCK_USER_ID,
+                activeEvent.getId(),
+                activeEvent.getName(),
+                activeEvent.getLocation(),
+                activeEvent.getCategory(),
+                STATUS_CONFIRMED,
+                activeEvent.getDate(),
+                1
+        ));
+
+        allReservations.add(new Reservation(
+                "reservation-seeded-2",
+                MOCK_USER_ID,
+                cancelledEvent.getId(),
+                cancelledEvent.getName(),
+                cancelledEvent.getLocation(),
+                cancelledEvent.getCategory(),
+                STATUS_CANCELLED,
+                cancelledEvent.getDate(),
+                2
+        ));
+
+        refreshVisibleReservations();
     }
 
     private void refreshEventsEmptyUi() {
@@ -503,10 +613,16 @@ public class MockMainActivity extends AppCompatActivity {
     }
 
     private static class SeededReservationAdapter extends RecyclerView.Adapter<SeededReservationAdapter.ReservationHolder> {
-        private final List<Reservation> reservations;
+        private interface ReservationActionListener {
+            void onCancel(Reservation reservation);
+        }
 
-        SeededReservationAdapter(List<Reservation> reservations) {
+        private final List<Reservation> reservations;
+        private final ReservationActionListener actionListener;
+
+        SeededReservationAdapter(List<Reservation> reservations, ReservationActionListener actionListener) {
             this.reservations = reservations;
+            this.actionListener = actionListener;
         }
 
         @NonNull
@@ -526,7 +642,7 @@ public class MockMainActivity extends AppCompatActivity {
             return reservations.size();
         }
 
-        private static class ReservationHolder extends RecyclerView.ViewHolder {
+        private class ReservationHolder extends RecyclerView.ViewHolder {
             private final TextView tvEventName;
             private final TextView tvCategory;
             private final TextView tvLocation;
@@ -553,9 +669,28 @@ public class MockMainActivity extends AppCompatActivity {
                 tvLocation.setText(reservation.getEventLocation());
                 tvEventDate.setText(dateFormat.format(reservation.getEventDate().toDate()));
                 tvTicketCount.setText(itemView.getContext().getString(R.string.tickets_count, reservation.getTicketCount()));
-                tvStatus.setText(itemView.getContext().getString(R.string.status_confirmed));
-                tvStatus.setTextColor(0xFF2E7D32);
-                btnCancelReservation.setVisibility(View.GONE);
+
+                boolean isCancelled = STATUS_CANCELLED.equalsIgnoreCase(reservation.getStatus());
+                if (isCancelled) {
+                    tvStatus.setText(itemView.getContext().getString(R.string.status_cancelled));
+                    tvStatus.setTextColor(0xFFC62828);
+                    btnCancelReservation.setEnabled(false);
+                    btnCancelReservation.setText(itemView.getContext().getString(R.string.reservation_cancelled));
+                    btnCancelReservation.setAlpha(0.6f);
+                } else {
+                    tvStatus.setText(itemView.getContext().getString(R.string.status_confirmed));
+                    tvStatus.setTextColor(0xFF2E7D32);
+                    btnCancelReservation.setEnabled(true);
+                    btnCancelReservation.setText(itemView.getContext().getString(R.string.cancel_reservation));
+                    btnCancelReservation.setAlpha(1f);
+                }
+
+                btnCancelReservation.setVisibility(View.VISIBLE);
+                btnCancelReservation.setOnClickListener(v -> {
+                    if (!isCancelled) {
+                        actionListener.onCancel(reservation);
+                    }
+                });
             }
         }
     }

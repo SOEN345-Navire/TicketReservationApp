@@ -68,8 +68,8 @@ public class LoginE2ETest {
 
     @Test
         public void emailLogin_registersUserThenLogsIn() throws Exception {
-                String email = "e2e-login-" + UUID.randomUUID().toString().substring(0, 8) + "@example.com";
-                String password = "ValidPass123!";
+                String email = "greglajoie55@gmail.com";
+                String password = "Qwerty123!";
 
                 ensureUserExists(email, password);
 

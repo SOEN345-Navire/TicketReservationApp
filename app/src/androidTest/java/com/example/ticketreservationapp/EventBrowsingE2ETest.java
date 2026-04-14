@@ -20,18 +20,22 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.Timestamp;
 
 import org.hamcrest.Matcher;
+import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.Rule;
 import org.junit.runner.RunWith;
+import org.junit.runners.MethodSorters;
 
 import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Locale;
 
 import static androidx.test.espresso.Espresso.onView;
+import static androidx.test.espresso.action.ViewActions.click;
 import static androidx.test.espresso.assertion.ViewAssertions.matches;
 import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
+import static androidx.test.espresso.matcher.ViewMatchers.withText;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -40,6 +44,7 @@ import static org.junit.Assert.assertNotNull;
  * Verifies the main events list opens with all events and expected item details.
  */
 @RunWith(AndroidJUnit4.class)
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class EventBrowsingE2ETest {
 
     private static final String FULL_EVENT_MESSAGE = "Event is full, no tickets are available";
@@ -52,7 +57,7 @@ public class EventBrowsingE2ETest {
             new ActivityScenarioRule<>(MockMainActivity.class);
 
     @Test
-    public void showsAllEventsInEventsTab() {
+    public void test01_showsAllEventsInEventsTab() {
         List<Event> seededEvents = MockMainActivity.getSeededEvents();
 
         onView(withId(R.id.rvEvents)).check(matches(isDisplayed()));
@@ -70,7 +75,7 @@ public class EventBrowsingE2ETest {
     }
 
     @Test
-    public void booksOneTicket_updatesEventRow() {
+    public void test04_booksOneTicket_updatesEventRow() {
         List<Event> seededEvents = MockMainActivity.getSeededEvents();
 
         int bookingPosition = 3;
@@ -94,7 +99,7 @@ public class EventBrowsingE2ETest {
     }
 
     @Test
-    public void booksTicket_showsReservationInTab() {
+    public void test05_booksTicket_showsReservationInTab() {
         List<Event> seededEvents = MockMainActivity.getSeededEvents();
 
         int bookingPosition = 3;
@@ -113,8 +118,51 @@ public class EventBrowsingE2ETest {
         waitStep();
 
         onView(withId(R.id.rvReservations)).check(matches(isDisplayed()));
+        onView(withId(R.id.rvReservations)).check(new RecyclerCountAssert(2));
+        onView(withId(R.id.rvReservations)).check(new ReservationRowAssert(0, bookedEvent, 1, "Status: Confirmed"));
+    }
+
+    @Test
+    public void test02_reservations_cancelJazzMovesToPastCancelled() {
+        List<Event> seededEvents = MockMainActivity.getSeededEvents();
+
+        Event seededActiveEvent = seededEvents.get(0);
+
+        onView(withId(R.id.bottomNav)).perform(selectBottomTab(R.id.nav_reservations));
+        waitStep();
+
+        onView(withId(R.id.rvReservations)).check(matches(isDisplayed()));
         onView(withId(R.id.rvReservations)).check(new RecyclerCountAssert(1));
-        onView(withId(R.id.rvReservations)).check(new ReservationRowAssert(0, bookedEvent, 1));
+        onView(withId(R.id.rvReservations)).check(new ReservationRowAssert(0, seededActiveEvent, 1, "Status: Confirmed"));
+
+        onView(withId(R.id.rvReservations)).perform(
+                RecyclerViewActions.actionOnItemAtPosition(0, clickChild(R.id.btnCancelReservation))
+        );
+        waitStep();
+
+        onView(withId(R.id.rvReservations)).check(new RecyclerCountAssert(0));
+
+        onView(withText("Past / Cancelled")).perform(click());
+        waitStep();
+
+        onView(withId(R.id.rvReservations)).check(new RecyclerCountAssert(2));
+        onView(withId(R.id.rvReservations)).check(new ReservationRowAssert(0, seededActiveEvent, 1, "Status: Cancelled"));
+    }
+
+    @Test
+    public void test03_jazzRemainsInPastCancelledInNextTest() {
+        List<Event> seededEvents = MockMainActivity.getSeededEvents();
+        Event jazzEvent = seededEvents.get(0);
+
+        onView(withId(R.id.bottomNav)).perform(selectBottomTab(R.id.nav_reservations));
+        waitStep();
+
+        onView(withText("Past / Cancelled")).perform(click());
+        waitStep();
+
+        onView(withId(R.id.rvReservations)).check(matches(isDisplayed()));
+        onView(withId(R.id.rvReservations)).check(new RecyclerCountAssert(2));
+        onView(withId(R.id.rvReservations)).check(new ReservationRowAssert(0, jazzEvent, 1, "Status: Cancelled"));
     }
 
     private static void waitStep() {
@@ -233,11 +281,13 @@ public class EventBrowsingE2ETest {
         private final int position;
         private final Event expectedEvent;
         private final int expectedTicketCount;
+        private final String expectedStatus;
 
-        ReservationRowAssert(int position, Event expectedEvent, int expectedTicketCount) {
+        ReservationRowAssert(int position, Event expectedEvent, int expectedTicketCount, String expectedStatus) {
             this.position = position;
             this.expectedEvent = expectedEvent;
             this.expectedTicketCount = expectedTicketCount;
+            this.expectedStatus = expectedStatus;
         }
 
         @Override
@@ -256,7 +306,7 @@ public class EventBrowsingE2ETest {
             assertText(itemView, R.id.tvReservationLocation, expectedEvent.getLocation());
             assertText(itemView, R.id.tvReservationEventDate, formatDate(expectedEvent.getDate()));
             assertText(itemView, R.id.tvReservationTicketCount, "Tickets: " + expectedTicketCount);
-            assertText(itemView, R.id.tvReservationStatus, "Status: Confirmed");
+            assertText(itemView, R.id.tvReservationStatus, expectedStatus);
         }
     }
 
