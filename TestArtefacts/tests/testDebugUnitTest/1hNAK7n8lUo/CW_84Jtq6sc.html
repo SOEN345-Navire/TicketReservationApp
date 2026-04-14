@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta http-equiv="x-ua-compatible" content="IE=edge"/>
+<title>Test results - handleEmailVerificationResultTest</title>
+<link href="../css/base-style.css" rel="stylesheet" type="text/css"/>
+<link href="../css/style.css" rel="stylesheet" type="text/css"/>
+<script src="../js/report.js" type="text/javascript"></script>
+</head>
+<body>
+<div id="content">
+<div class="breadcrumbs">
+<a class="breadcrumb" href="../index.html">all</a> &gt; 
+<a class="breadcrumb" href="index.html">com.example.ticketreservationapp.ConfirmEmailTest</a> &gt; 
+<span class="breadcrumb">handleEmailVerificationResultTest</span>
+</div>
+<div class="tab-container">
+<ul class="tabLinks">
+<li>
+<a class="successGroup" href="#">Gradle Test Run :app:testDebugUnitTest</a>
+</li>
+</ul>
+<div class="tab">
+<h2>Gradle Test Run :app:testDebugUnitTest</h2>
+<h1>handleEmailVerificationResultTest</h1>
+<div class="tab-container">
+<ul class="tabLinks">
+<li>
+<a class="" href="#">summary</a>
+</li>
+<li>
+<a class="" href="#">error output</a>
+</li>
+</ul>
+<div class="tab">
+<h2>summary</h2>
+<div>
+<div class="summary">
+<table>
+<tr>
+<td>
+<div class="summaryGroup">
+<table>
+<tr>
+<td>
+<div class="infoBox">
+<div class="counter">1</div>
+<p>tests</p>
+</div>
+</td>
+<td>
+<div class="infoBox">
+<div class="counter">0</div>
+<p>failures</p>
+</div>
+</td>
+<td>
+<div class="infoBox">
+<div class="counter">0</div>
+<p>skipped</p>
+</div>
+</td>
+<td>
+<div class="infoBox duration">
+<div class="counter">0.143s</div>
+<p>duration</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</td>
+<td>
+<div class="infoBox success successRate">
+<div class="percent">100%</div>
+<p>successful</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="tab">
+<h2>error output</h2>
+<span class="code">
+<pre id="root-0-test-stderr-handleEmailVerificationResultTest">System.logW: A resource was acquired at attached stack trace but never released. See java.io.Closeable for information on avoiding resource leaks.
+java.lang.Throwable: Explicit termination method 'Surface.release' not called
+	at dalvik.system.CloseGuard.$$robo$$dalvik_system_CloseGuard$openWithCallSite(CloseGuard.java:288)
+	at dalvik.system.CloseGuard.openWithCallSite(CloseGuard.java)
+	at dalvik.system.CloseGuard.$$robo$$dalvik_system_CloseGuard$open(CloseGuard.java:257)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at org.robolectric.shadows.ShadowCloseGuard$CloseGuardReflector$$Reflector21.open(Unknown Source)
+	at org.robolectric.shadows.ShadowCloseGuard.open(ShadowCloseGuard.java:38)
+	at dalvik.system.CloseGuard.open(CloseGuard.java)
+	at android.view.Surface.$$robo$$android_view_Surface$setNativeObjectLocked(Surface.java:773)
+	at android.view.Surface.setNativeObjectLocked(Surface.java)
+	at android.view.Surface.$$robo$$android_view_Surface$updateNativeObject(Surface.java:612)
+	at android.view.Surface.updateNativeObject(Surface.java)
+	at android.view.Surface.$$robo$$android_view_Surface$copyFrom(Surface.java:639)
+	at android.view.Surface.copyFrom(Surface.java)
+	at android.view.ViewRootImpl.$$robo$$android_view_ViewRootImpl$relayoutWindow(ViewRootImpl.java:8330)
+	at android.view.ViewRootImpl.relayoutWindow(ViewRootImpl.java)
+	at android.view.ViewRootImpl.$$robo$$android_view_ViewRootImpl$performTraversals(ViewRootImpl.java:3223)
+	at android.view.ViewRootImpl.performTraversals(ViewRootImpl.java)
+	at android.view.ViewRootImpl.$$robo$$android_view_ViewRootImpl$doTraversal(ViewRootImpl.java:2465)
+	at android.view.ViewRootImpl.doTraversal(ViewRootImpl.java)
+	at android.view.ViewRootImpl$TraversalRunnable.$$robo$$android_view_ViewRootImpl_TraversalRunnable$run(ViewRootImpl.java:9305)
+	at android.view.ViewRootImpl$TraversalRunnable.run(ViewRootImpl.java)
+	at android.view.Choreographer$CallbackRecord.$$robo$$android_view_Choreographer_CallbackRecord$run(Choreographer.java:1339)
+	at android.view.Choreographer$CallbackRecord.run(Choreographer.java)
+	at android.view.Choreographer$CallbackRecord.$$robo$$android_view_Choreographer_CallbackRecord$run(Choreographer.java:1348)
+	at android.view.Choreographer$CallbackRecord.run(Choreographer.java)
+	at android.view.Choreographer.$$robo$$android_view_Choreographer$doCallbacks(Choreographer.java:952)
+	at android.view.Choreographer.doCallbacks(Choreographer.java)
+	at android.view.Choreographer.$$robo$$android_view_Choreographer$doFrame(Choreographer.java:882)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at org.robolectric.shadows.ShadowChoreographer$ChoreographerReflector$$Reflector62.doFrame(Unknown Source)
+	at org.robolectric.shadows.ShadowChoreographer.lambda$doFrame$1(ShadowChoreographer.java:208)
+	at org.robolectric.util.PerfStatsCollector.measure(PerfStatsCollector.java:83)
+	at org.robolectric.shadows.ShadowChoreographer.doFrame(ShadowChoreographer.java:208)
+	at android.view.Choreographer.doFrame(Choreographer.java)
+	at android.view.Choreographer$FrameDisplayEventReceiver.$$robo$$android_view_Choreographer_FrameDisplayEventReceiver$run(Choreographer.java:1322)
+	at android.view.Choreographer$FrameDisplayEventReceiver.run(Choreographer.java)
+	at android.os.Handler.$$robo$$android_os_Handler$handleCallback(Handler.java:958)
+	at android.os.Handler.handleCallback(Handler.java)
+	at android.os.Handler.$$robo$$android_os_Handler$dispatchMessage(Handler.java:99)
+	at android.os.Handler.dispatchMessage(Handler.java)
+	at org.robolectric.shadows.ShadowPausedLooper$IdlingRunnable.doRun(ShadowPausedLooper.java:677)
+	at org.robolectric.shadows.ShadowPausedLooper$ControlRunnable.run(ShadowPausedLooper.java:599)
+	at org.robolectric.shadows.ShadowPausedLooper$HandlerExecutor.execute(ShadowPausedLooper.java:849)
+	at org.robolectric.shadows.ShadowPausedLooper.executeOnLooper(ShadowPausedLooper.java:765)
+	at org.robolectric.shadows.ShadowPausedLooper.idle(ShadowPausedLooper.java:109)
+	at org.robolectric.shadows.ShadowLooper.idleMainLooper(ShadowLooper.java:149)
+	at com.example.ticketreservationapp.AdminActivityTest.dateTimePicker_updatesBtnText(AdminActivityTest.java:410)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+	at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:26)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.robolectric.RobolectricTestRunner$HelperTestRunner$1.evaluate(RobolectricTestRunner.java:524)
+	at org.robolectric.internal.SandboxTestRunner.executeInSandbox(SandboxTestRunner.java:494)
+	at org.robolectric.internal.SandboxTestRunner.access$900(SandboxTestRunner.java:67)
+	at org.robolectric.internal.SandboxTestRunner$7.evaluate(SandboxTestRunner.java:442)
+	at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
+	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
+	at org.robolectric.internal.SandboxTestRunner.access$600(SandboxTestRunner.java:67)
+	at org.robolectric.internal.SandboxTestRunner$6.evaluate(SandboxTestRunner.java:333)
+	at org.robolectric.internal.SandboxTestRunner$3.evaluate(SandboxTestRunner.java:233)
+	at org.robolectric.internal.SandboxTestRunner$5.lambda$evaluate$0(SandboxTestRunner.java:317)
+	at org.robolectric.internal.bytecode.Sandbox.lambda$runOnMainThread$0(Sandbox.java:101)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:328)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1090)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:614)
+	at java.base/java.lang.Thread.run(Thread.java:1474)
+
+</pre>
+<button class="clipboard-copy-btn" aria-label="Copy to clipboard" data-copy-element-id="root-0-test-stderr-handleEmailVerificationResultTest">Copy</button>
+</span>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<p>
+<div>
+<label class="hidden" id="label-for-line-wrapping-toggle" for="line-wrapping-toggle">Wrap lines
+<input id="line-wrapping-toggle" type="checkbox" autocomplete="off"/>
+</label>
+</div>Generated by 
+<a href="https://www.gradle.org">Gradle 9.4.1</a> at 13 avr. 2026, 22 h 12 min 47 s</p>
+</div>
+</div>
+</body>
+</html>
