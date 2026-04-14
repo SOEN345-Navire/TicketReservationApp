@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RegisterActivity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.ticketreservationapp</a> &gt; <span class="el_source">RegisterActivity.java</span></div><h1>RegisterActivity.java</h1><pre class="source lang-java linenums">package com.example.ticketreservationapp;
+
+import static com.example.ticketreservationapp.Authentification.emailRegex;
+import static com.example.ticketreservationapp.Authentification.passwordRegex;
+import static com.example.ticketreservationapp.R.*;
+
+import android.content.Intent;
+
+import android.os.Bundle;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.Toast;
+
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.AuthResult;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthUserCollisionException;
+
+
+<span class="fc" id="L23">public class RegisterActivity extends AppCompatActivity {</span>
+    EditText email, confirmPassword, password;
+
+    Button registerMail;
+    FirebaseAuth auth;
+
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+<span class="fc" id="L32">        super.onCreate(savedInstanceState);</span>
+<span class="fc" id="L33">        setContentView(layout.activity_register);</span>
+
+        // Initialize FirebaseAuth instance
+<span class="fc" id="L36">        auth = FirebaseAuth.getInstance();</span>
+
+
+<span class="fc" id="L39">        email = findViewById(id.email_edittext);</span>
+<span class="fc" id="L40">        password = findViewById(id.password_edittext);</span>
+<span class="fc" id="L41">        confirmPassword = findViewById(id.confirmPassword_edittext);</span>
+
+<span class="fc" id="L43">        registerMail = findViewById(id.registerMail_button);</span>
+<span class="fc" id="L44">        registerMail.setOnClickListener(v -&gt; registerWithEmail(email.getText().toString().trim().toLowerCase(),password.getText().toString().trim(),confirmPassword.getText().toString().trim()));</span>
+<span class="fc" id="L45">    }</span>
+
+    void registerWithEmail(String authString, String pass, String confirmPass) {
+
+        // Validate input
+<span class="fc bfc" id="L50" title="All 6 branches covered.">        if (authString.isEmpty() || pass.isEmpty() || confirmPass.isEmpty()) {</span>
+<span class="fc" id="L51">            Toast.makeText(this, &quot;Please enter credentials&quot;, Toast.LENGTH_LONG).show();</span>
+<span class="fc" id="L52">            return;</span>
+        }
+<span class="fc bfc" id="L54" title="All 2 branches covered.">        if (!pass.equals(confirmPass)) {</span>
+<span class="fc" id="L55">            Toast.makeText(this, &quot;Passwords do not match&quot;, Toast.LENGTH_LONG).show();</span>
+<span class="fc" id="L56">            return;</span>
+        }
+<span class="fc bfc" id="L58" title="All 2 branches covered.">        if (!pass.matches(passwordRegex)) {</span>
+<span class="fc" id="L59">            Toast.makeText(this, &quot;Password must contain at least 8 characters, one uppercase letter, one lowercase letter, one number, and one special character&quot;, Toast.LENGTH_LONG).show();</span>
+<span class="fc" id="L60">            return;</span>
+        }
+<span class="fc bfc" id="L62" title="All 2 branches covered.">        if(authString.matches(emailRegex)) {</span>
+
+            // Register user with email and password
+<span class="fc" id="L65">             auth.createUserWithEmailAndPassword(authString, pass)</span>
+<span class="fc" id="L66">                     .addOnCompleteListener(this, this::handleRegistrationResult);</span>
+        } else{
+<span class="fc" id="L68">            Toast.makeText(this, &quot;Please enter a valid email&quot;, Toast.LENGTH_LONG).show();</span>
+        }
+<span class="fc" id="L70">    }</span>
+
+    public void handleRegistrationResult(Task&lt;AuthResult&gt; task) {
+        // Registration successful
+<span class="fc bfc" id="L74" title="All 2 branches covered.">        if (task.isSuccessful()) {</span>
+            // Navigate to MainActivity
+<span class="fc" id="L76">            Toast.makeText(RegisterActivity.this, &quot;Registration successful!&quot;, Toast.LENGTH_LONG).show();</span>
+<span class="fc" id="L77">            startActivity(new Intent(RegisterActivity.this, ConfirmEmailActivity.class));</span>
+<span class="fc" id="L78">            finish();</span>
+        }
+        // Registration failed
+        //User is already registered
+<span class="fc bfc" id="L82" title="All 2 branches covered.">        else if (task.getException() instanceof FirebaseAuthUserCollisionException){</span>
+<span class="fc" id="L83">            Toast.makeText(RegisterActivity.this, &quot;You're already register please log in&quot;, Toast.LENGTH_LONG).show();</span>
+<span class="fc" id="L84">            startActivity(new Intent(RegisterActivity.this, LogInActivity.class));</span>
+<span class="fc" id="L85">            finish();</span>
+        } else {
+<span class="fc" id="L87">            Toast.makeText(RegisterActivity.this, &quot;Registration failed! Please try again later&quot;, Toast.LENGTH_LONG).show();</span>
+        }
+<span class="fc" id="L89">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span>Generated by the Android Gradle plugin 9.0.1</div></body></html>
