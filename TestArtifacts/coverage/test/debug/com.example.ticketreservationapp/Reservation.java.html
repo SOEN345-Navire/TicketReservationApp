@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Reservation.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.ticketreservationapp</a> &gt; <span class="el_source">Reservation.java</span></div><h1>Reservation.java</h1><pre class="source lang-java linenums">package com.example.ticketreservationapp;
+
+import androidx.annotation.NonNull;
+
+import com.google.firebase.Timestamp;
+
+public class Reservation {
+    private String id;
+    private String userId;
+    private String eventId;
+    private String eventName;
+    private String eventLocation;
+    private String eventCategory;
+    private String status;
+    private Timestamp eventDate;
+    private int ticketCount;
+
+
+<span class="fc" id="L19">    public Reservation() {</span>
+<span class="fc" id="L20">    }</span>
+
+<span class="fc" id="L22">    public Reservation(String id, String userId, String eventId, String eventName, String eventLocation, String eventCategory, String status, Timestamp eventDate, int ticketCount) {</span>
+<span class="fc" id="L23">        this.id = id;</span>
+<span class="fc" id="L24">        this.userId = userId;</span>
+<span class="fc" id="L25">        this.eventId = eventId;</span>
+<span class="fc" id="L26">        this.eventName = eventName;</span>
+<span class="fc" id="L27">        this.eventLocation = eventLocation;</span>
+<span class="fc" id="L28">        this.eventCategory = eventCategory;</span>
+<span class="fc" id="L29">        this.status = status;</span>
+<span class="fc" id="L30">        this.eventDate = eventDate;</span>
+<span class="fc" id="L31">        this.ticketCount = ticketCount;</span>
+<span class="fc" id="L32">    }</span>
+
+    public String getId() {
+<span class="fc" id="L35">        return id;</span>
+    }
+
+    public void setId(String id) {
+<span class="fc" id="L39">        this.id = id;</span>
+<span class="fc" id="L40">    }</span>
+
+    public String getUserId() {
+<span class="fc" id="L43">        return userId;</span>
+    }
+
+    public void setUserId(String userId) {
+<span class="fc" id="L47">        this.userId = userId;</span>
+<span class="fc" id="L48">    }</span>
+
+    public String getEventId() {
+<span class="fc" id="L51">        return eventId;</span>
+    }
+
+    public void setEventId(String eventId) {
+<span class="fc" id="L55">        this.eventId = eventId;</span>
+<span class="fc" id="L56">    }</span>
+
+    public String getEventName() {
+<span class="fc" id="L59">        return eventName;</span>
+    }
+
+    public void setEventName(String eventName) {
+<span class="fc" id="L63">        this.eventName = eventName;</span>
+<span class="fc" id="L64">    }</span>
+
+    public String getEventLocation() {
+<span class="fc" id="L67">        return eventLocation;</span>
+    }
+
+    public void setEventLocation(String eventLocation) {
+<span class="fc" id="L71">        this.eventLocation = eventLocation;</span>
+<span class="fc" id="L72">    }</span>
+
+    public String getEventCategory() {
+<span class="fc" id="L75">        return eventCategory;</span>
+    }
+
+    public void setEventCategory(String eventCategory) {
+<span class="fc" id="L79">        this.eventCategory = eventCategory;</span>
+<span class="fc" id="L80">    }</span>
+
+    public String getStatus() {
+<span class="fc" id="L83">        return status;</span>
+    }
+
+    public void setStatus(String status) {
+<span class="fc" id="L87">        this.status = status;</span>
+<span class="fc" id="L88">    }</span>
+
+    public Timestamp getEventDate() {
+<span class="fc" id="L91">        return eventDate;</span>
+    }
+
+    public void setEventDate(Timestamp eventDate) {
+<span class="fc" id="L95">        this.eventDate = eventDate;</span>
+<span class="fc" id="L96">    }</span>
+
+    public int getTicketCount() {
+<span class="fc" id="L99">        return ticketCount;</span>
+    }
+
+    public void setTicketCount(int ticketCount) {
+<span class="fc" id="L103">        this.ticketCount = ticketCount;</span>
+<span class="fc" id="L104">    }</span>
+
+
+    @NonNull
+    @Override
+    public String toString(){
+<span class="fc" id="L110">        return (&quot;Reservation:\n&quot; +</span>
+                &quot;eventName: &quot; + eventName + &quot;\n&quot; +
+                &quot;eventLocation: &quot; + eventLocation + &quot;\n&quot; +
+                &quot;eventCategory: &quot; + eventCategory + &quot;\n&quot; +
+                &quot;status: &quot; + status + &quot;\n&quot; +
+<span class="fc" id="L115">                &quot;eventDate: &quot; + eventDate.toDate() + &quot;\n&quot; +</span>
+                &quot;ticketCount: &quot; + ticketCount + &quot;\n&quot;
+        );
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span>Generated by the Android Gradle plugin 9.0.1</div></body></html>
