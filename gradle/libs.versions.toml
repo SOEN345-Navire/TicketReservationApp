@@ -19,6 +19,8 @@ recyclerview = "1.4.0"
 firebaseUiFirestore = "9.1.1"
 junitJupiter = "5.14.0"
 robolectric = "4.16.1"
+protobuf = "3.24.0"
+hamcrest = "2.2"
 
 [libraries]
 browser = { module = "androidx.browser:browser", version.ref = "browser" }
@@ -32,6 +34,7 @@ integrity = { module = "com.google.android.play:integrity", version.ref = "integ
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
+espresso-contrib = { group = "androidx.test.espresso", name = "espresso-contrib", version.ref = "espressoCore" }
 appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
@@ -43,6 +46,8 @@ recyclerview = { group = "androidx.recyclerview", name = "recyclerview", version
 firebase-ui-firestore = { group = "com.firebaseui", name = "firebase-ui-firestore", version.ref = "firebaseUiFirestore" }
 junit-jupiter = { group = "org.junit.jupiter", name = "junit-jupiter", version.ref = "junitJupiter" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
+protobuf-javalite = { module = "com.google.protobuf:protobuf-javalite", version.ref = "protobuf" }
+hamcrest = { module = "org.hamcrest:hamcrest", version.ref = "hamcrest" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

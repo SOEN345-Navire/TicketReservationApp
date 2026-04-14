@@ -63,11 +63,25 @@ dependencies {
     testImplementation(libs.robolectric)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
+    androidTestImplementation(libs.espresso.contrib)
+    androidTestImplementation("androidx.test.espresso:espresso-intents:3.7.0")
+    androidTestImplementation(libs.hamcrest)
+    androidTestRuntimeOnly(libs.hamcrest)
+    androidTestImplementation("org.mockito:mockito-android:5.2.0")
+    androidTestImplementation(platform(libs.firebase.bom))
     implementation(platform(libs.firebase.bom))
     implementation(libs.google.firebase.auth)
     implementation(libs.firebase.ui.firestore)
     implementation(libs.firebase.analytics)
 }
+
+configurations.all {
+    resolutionStrategy {
+        // Let Firebase manage protobuf versions through BOM
+        // Don't force specific versions that may conflict
+    }
+}
+
 tasks.withType<Test>().configureEach {
     useJUnit()
     extensions.configure(JacocoTaskExtension::class.java) {
